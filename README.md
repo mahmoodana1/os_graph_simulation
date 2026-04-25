@@ -18,4 +18,8 @@ To compile and run this project, you must be on a Linux environment and have the
 
 1. **Compile the project:**
    ```bash
-   make
+    make clean
+
+    make
+
+    ./build/traffic_sim data/input.txt
