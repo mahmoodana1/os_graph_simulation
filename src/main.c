@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
     int start_node, end_node;
 
     // mohammed TODO:
-    Graph* g = load_graph(argv[1], &start_node, &end_node);
+    Graph* g = loadGraph(argv[1], &start_node, &end_node);
     if (!g) {
         return 1;
     }
@@ -23,9 +23,9 @@ int main(int argc, char* argv[]) {
 
     // 4. Ahmed TODO: Launch the GUI (Milestone 2)
     // The window stays open until the user closes it
-    start_gui(g);
+    startGui(g);
 
-    free_all(g);
+    freeAll(g);
 
     return 0;
 }

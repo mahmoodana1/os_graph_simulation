@@ -1,6 +1,6 @@
-#include "graph.h"
+#include "../include/graph.h"
 #include "raylib.h"
-void start_gui()
+void startGui()
 {
 
 }
