@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
 
     // Loai TODO: Solve and print to terminal (Milestone 1)
     // This handles the 0->2->1 format and weight output
-    solve_dijkstra(g, start_node, end_node);
+    solveDijkstra(g, start_node, end_node);
 
     // 4. Ahmed TODO: Launch the GUI (Milestone 2)
     // The window stays open until the user closes it
