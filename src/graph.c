@@ -35,7 +35,7 @@ void addEdge(Graph* graph, int src, int dst, int weight) {
 
 
 
-Graph* load_graph(const char* filename, int* srcQuery, int* dstQuery) {
+Graph* loadGraph(const char* filename, int* srcQuery, int* dstQuery) {
 	FILE* file = fopen(filename, "r");
 	if(!file) {
 		printf("Could not open the file");
@@ -65,7 +65,7 @@ Graph* load_graph(const char* filename, int* srcQuery, int* dstQuery) {
         	if (fscanf(file, "%d %d %d", &src, &dst, &weight) != 3) {
             		printf("Error: invalid edge format at edge %d\n", i+1);
 			fclose(file);
-			free_all(graph);
+			freeAll(graph);
             		return NULL;
         	}
 
@@ -73,7 +73,7 @@ Graph* load_graph(const char* filename, int* srcQuery, int* dstQuery) {
         	if (src < 0 || src >= N || dst < 0 || dst >= N) {
             		printf("Error: node index out of range at edge %d\n", i+1);
             		fclose(file);
-			free_all(graph);
+			freeAll(graph);
             		return NULL;
         	}
 
@@ -83,7 +83,7 @@ Graph* load_graph(const char* filename, int* srcQuery, int* dstQuery) {
 	if( fscanf(file, "%d %d", srcQuery, dstQuery) != 2 ) {
 		printf("Error: last line format is wrong\n");
 		fclose(file);
-		free_all(graph);
+		freeAll(graph);
 		return NULL;
 	}
 	
@@ -93,7 +93,7 @@ Graph* load_graph(const char* filename, int* srcQuery, int* dstQuery) {
 
 
 // free the graph
-void free_all(Graph* graph) {
+void freeAll(Graph* graph) {
 	if (!graph) return;
 
 	for (int i = 0; i < graph->num_nodes; i++) {
