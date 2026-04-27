@@ -7,50 +7,89 @@
 const int screenWidth = 800;
 const int screenHeight = 600;
 
+
+void DrawArrowHead(Vector2 start, Vector2 end, Color color)
+{
+    // Calculating the angle of inclination of a triangle using the Arc-Attan function
+    float angle = atan2(end.y - start.y, end.x - start.x);
+
+    float arrowDist = 30;
+    Vector2 tip = {
+        end.x - cosf(angle) * arrowDist,
+        end.y - sinf(angle) * arrowDist
+    };
+
+    DrawPoly(tip, 3,10,(angle * RAD2DEG) + 90,color);
+}
+
+
 void startGui(Graph* g)
 {
+    if (g == NULL) return;
+
     // Screen size and frame settings
     InitWindow(screenWidth, screenHeight, "Graph Visualization - Milestone 2");
     SetTargetFPS(60);
 
-        while (!WindowShouldClose())
+    // A vector is a structure in the Raylib library that contains x and y,
+    // and its purpose is to define the locations of the nodes
+    Vector2 nodePositions[15];
+
+    // Place the drawing in the middle
+    float centerX = screenWidth / 2;
+    float centerY = screenHeight / 2;
+    float radius = 200;
+
+    // Making a circle
+    for (int i = 0; i < g->num_nodes; i++)
+    {
+        // (2 * PI / g->num_nodes) So that the contract is distributed equally
+        float calcAngle = i * (2 * PI / g->num_nodes);
+        nodePositions[i].x = centerX + radius * cosf(calcAngle);
+        // Calculate the horizontal coordinate using the cosine function.
+        nodePositions[i].y = centerY + radius * sinf(calcAngle);
+        // Calculate the vertical coordinate using the sine function.
+    }
+
+
+    while (!WindowShouldClose())
+    {
+        // Cleaning and preparing the screen
+        BeginDrawing();
+        ClearBackground(BLACK);
+
+        for (int i = 0; i < g->num_nodes; i++)
         {
-            // Cleaning and preparing the screen
-            BeginDrawing();
-            ClearBackground(RAYWHITE);
-            float centerX = screenWidth / 2;
-            float centerY = screenHeight / 2;
-            float radius = 200;
-
-            for (int i = 0; i < g->num_nodes; i++)
+            Node* temp = g->adj[i];
+            while (temp != NULL)
             {
-                Node* temp = g->adj[i];
-                while (temp != NULL)
-                {
-                    // int target = temp->id;
-                    int weight = temp->weight;
+                int target = temp->id; // We're going to
+                //int weight = temp->weight; // Its weight
 
+                // lins...
+                DrawLineEx(nodePositions[i], nodePositions[target], 2, GRAY);
 
+                ///
+                DrawArrowHead(nodePositions[i], nodePositions[target], ORANGE);
+                ///
 
-                    float angle = i * (2 * PI / g->num_nodes);
-                    float x = centerX + radius * cosf(angle);
-                    float y = centerY + radius * sinf(angle);
+                // Weight location calculator (in the mid)
+                float midX = (nodePositions[i].x + nodePositions[target].x) / 2.0f;
+                float midY = (nodePositions[i].y + nodePositions[target].y) / 2.0f;
 
-                    // Draw Circle
-                    DrawCircle(x, y, 25,BLUE);
-                    DrawText(TextFormat("%d", weight), x - 5, y - 8, 20,BLACK);
+                DrawText(TextFormat("%d", temp->weight), midX + 5, midY, 20, RED);
 
-                    temp = temp->next;
-                }
+                temp = temp->next;
             }
-
-
-            EndDrawing();
         }
-        CloseWindow();
 
+        for (int i = 0; i < g->num_nodes; i++)
+        {
+            DrawCircleV(nodePositions[i], 25, BLUE);
+            DrawText(TextFormat("%d", i), nodePositions[i].x - 5, nodePositions[i].y - 8, 20, WHITE);
+        }
 
-
-
-
+        EndDrawing();
+    }
+    CloseWindow();
 }
