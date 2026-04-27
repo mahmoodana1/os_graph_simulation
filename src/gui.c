@@ -54,4 +54,3 @@ void startGui(Graph* g)
 
 
 }
-
