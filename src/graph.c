@@ -3,8 +3,7 @@
 #include <stdlib.h>
 
 Graph* createGraph(int numNodes) {
-
-	Graph* graph = malloc( sizeof(Graph) );
+	Graph* graph = malloc( sizeof(Graph) + numNodes * sizeof(Node*));
     	if (!graph) {
         	printf("Error: failed to allocate graph\n");
         	return NULL;
@@ -57,8 +56,7 @@ Graph* loadGraph(const char* filename, int* srcQuery, int* dstQuery) {
 		return NULL;
 	}
 
-    // Loop throught input file M times to read adjacency list
-	
+    // read adjacency list	
    	for (int i = 0; i < M; i++) {
         	int src, dst, weight;
 
@@ -92,7 +90,6 @@ Graph* loadGraph(const char* filename, int* srcQuery, int* dstQuery) {
 }
 
 
-// free the graph
 void freeAll(Graph* graph) {
 	if (!graph) return;
 
