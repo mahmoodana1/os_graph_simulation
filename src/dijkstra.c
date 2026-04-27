@@ -27,7 +27,7 @@ void printPath(int parent[], int v) {
      }
 
      printPath(parent, parent[v]);
-     printf(" -> %d", v);
+     printf("->%d", v);
  }
 
 void printDijkstraResult(int parent[], int dst[], int start, int end) {

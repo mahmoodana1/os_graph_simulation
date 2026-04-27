@@ -4,7 +4,7 @@
 
 Graph* createGraph(int numNodes) {
 
-	Graph* graph = malloc( sizeof(Graph) );
+	Graph* graph = malloc( sizeof(Graph) + numNodes * sizeof(Node*));
     	if (!graph) {
         	printf("Error: failed to allocate graph\n");
         	return NULL;
