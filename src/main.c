@@ -18,7 +18,6 @@ int main(int argc, char* argv[]) {
     }
 
     solveDijkstra(g, start_node, end_node);
-
     startGui(g);
 
     freeAll(g);

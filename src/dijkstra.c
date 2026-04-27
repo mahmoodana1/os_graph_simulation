@@ -43,7 +43,7 @@ void printDijkstraResult(int parent[], int dst[], int start, int end) {
 
      printPath(parent, end);
      printf("\n");
-     printf("%d\n", dst[end]);
+     printf("Total Weight: %d\n", dst[end]);
  }
 
 void solveDijkstra(Graph *g, int start, int end) {
