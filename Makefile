@@ -6,7 +6,7 @@ all: build/traffic_sim
 
 # link all the object files ".o" together to create the final program
 build/traffic_sim: build/main.o build/graph.o build/dijkstra.o build/gui.o
-	$(CC) build/main.o build/graph.o build/dijkstra.o build/gui.o -o build/traffic_sim
+	$(CC) build/main.o build/graph.o build/dijkstra.o build/gui.o -o build/traffic_sim $(LIBS)
 
 # compile each C file into an object file individually
 build/graph.o: src/graph.c

@@ -1,6 +1,4 @@
-#include "gui.h"
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include "../include/graph.h"
 #include "raylib.h"
