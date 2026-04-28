@@ -31,4 +31,4 @@ build/main.o: src/main.c
 	$(CC) $(CFLAGS) -c src/main.c -o build/main.o
 
 clean:
-	rm -rf build dijkstra
+	rm -rf build dijkstra sim
