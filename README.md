@@ -44,4 +44,3 @@ Bash
 ```
 .sim data/input.txt
 ```
-
