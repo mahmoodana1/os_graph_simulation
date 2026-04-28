@@ -16,10 +16,19 @@ To compile and run this project, you must be on a Linux environment and have the
 
 ## 🚀 Build & Run
 
-1. **Compile the project:**
-   ```bash
-    make clean
+To ensure a clean environment and consistent results, follow these steps to compile and execute the simulation:
 
-    make
+### **1. Prepare and Compile**
+Clean any previous build artifacts and compile the project using the Milestone 1 configuration:
+```bash
+# Clean previous builds
+make clean
 
-    ./build/traffic_sim data/input.txt
+# Compile the Milestone 1 target
+make milestone1
+
+### **2. Execute the Program**
+Run the compiled binary by passing your input file as a command-line argument:
+Bash
+
+./dijkstra data/input.txt
