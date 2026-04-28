@@ -4,9 +4,14 @@ LIBS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
 milestone1: dijkstra
 
+milestone2: sim
+
 # linking
-dijkstra: build/main.o build/graph.o build/dijkstra.o
-	$(CC) build/main.o build/graph.o build/dijkstra.o -o dijkstra $(LIBS)
+dijkstra: build/main.o build/graph.o build/dijkstra.o build/gui.o
+	$(CC) build/main.o build/graph.o build/dijkstra.o build/gui.o -o dijkstra $(LIBS)
+
+sim: build/main.o build/graph.o build/dijkstra.o build/gui.o
+	$(CC) build/main.o build/graph.o build/dijkstra.o build/gui.o -o sim $(LIBS)
 
 # compile each C file into an object file individually
 build/graph.o: src/graph.c
@@ -16,10 +21,15 @@ build/graph.o: src/graph.c
 build/dijkstra.o: src/dijkstra.c
 	mkdir -p build
 	$(CC) $(CFLAGS) -c src/dijkstra.c -o build/dijkstra.o
+  
+  build/gui.o: src/dijkstra.c
+	mkdir -p build
+	$(CC) $(CFLAGS) -c src/gui.c -o build/gui.o
 
 build/main.o: src/main.c
 	mkdir -p build
 	$(CC) $(CFLAGS) -c src/main.c -o build/main.o
 
 clean:
-	rm -rf build dijkstra
+	rm -rf build dijkstra sim
+

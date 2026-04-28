@@ -27,8 +27,20 @@ make clean
 # Compile the Milestone 1 target
 make milestone1
 
+# Compile the Milestone 2 target
+make milestone2
+
+```
 ### **2. Execute the Program**
 Run the compiled binary by passing your input file as a command-line argument:
 Bash
 
+# milestone 1 execution
+```
 ./dijkstra data/input.txt
+```
+
+#milestone 2 execution
+```
+.sim data/input.txt
+```
