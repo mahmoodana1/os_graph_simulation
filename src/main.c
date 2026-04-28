@@ -1,6 +1,5 @@
 #include "../include/graph.h"
 #include "../include/dijkstra.h"
-#include "../include/gui.h"
 #include <stdio.h>
 
 int main(int argc, char* argv[]) {
@@ -18,9 +17,6 @@ int main(int argc, char* argv[]) {
     }
 
     solveDijkstra(g, start_node, end_node);
-
-    startGui(g);
-
     freeAll(g);
 
     return 0;
