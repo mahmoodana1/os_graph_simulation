@@ -42,5 +42,5 @@ Bash
 
 ### milestone 2 execution
 ```
-.sim data/input.txt
+./sim data/input.txt
 ```
