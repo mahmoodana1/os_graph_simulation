@@ -1,90 +1,123 @@
-#ifndef FILE_H
-#define FILE_H
-
 #define INF 1000000
 
 #include <stdio.h>
 #include "../include/graph.h"
+#include "../include/dijkstra.h"
 
- int getMinDst(int dist[], int visited[], int n) {
-     int min = INF;
-     int minIndex = -1;
+/* get the unvisited node with the smallest distance */
+int getMinDst(int dist[], int visited[], int n) {
+    int min = INF;
+    int minIndex = -1;
 
-     for (int i = 0; i < n; i++) {
-         if (dist[i] < min && visited[i] == 0) {
-             min = dist[i];
-             minIndex = i;
-         }
-     }
+    for (int i = 0; i < n; i++) {
+        if (visited[i] == 0 && dist[i] < min) {
+            min = dist[i];
+            minIndex = i;
+        }
+    }
 
-     return minIndex;
- }
+    return minIndex;
+}
 
-void printPath(int parent[], int v) {
-     if (parent[v] == -1) {
-         printf("%d", v);
-         return;
-     }
+/* build the ordered path from start to end using parent array */
+PathResult buildPathResult(int parent[], int start, int end, int totalWeight) {
+    PathResult result;
 
-     printPath(parent, parent[v]);
-     printf(" -> %d", v);
- }
+    result.length = 0;
+    result.totalWeight = totalWeight;
+    result.found = 1;
 
-void printDijkstraResult(int parent[], int dst[], int start, int end) {
-     if (start == end) {
-         printf("%d\n", start);
-         return;
-     }
+    int temp[MAX_PATH];
+    int count = 0;
+    int current = end;
 
-     if (dst[end] == INF) {
-         printf("No path found\n");
-         return;
-     }
+    while (current != -1) {
+        temp[count] = current;
+        count++;
 
-     printPath(parent, end);
-     printf("\n");
-     printf("%d\n", dst[end]);
- }
+        if (current == start) {
+            break;
+        }
 
-void solveDijkstra(Graph *g, int start, int end) {
-     int numofVertises = g->num_nodes;
-     int dst[numofVertises];
-     int visited[numofVertises];
-     int parent[numofVertises];
+        current = parent[current];
+    }
 
-     for (int i = 0; i < numofVertises; i++) {
-         dst[i] = INF;
-         visited[i] = 0;
-         parent[i] = -1;
-     }
+    for (int i = count - 1; i >= 0; i--) {
+        result.nodes[result.length] = temp[i];
+        result.length++;
+    }
 
-     dst[start] = 0;
+    return result;
+}
 
-     for (int i = 0; i < numofVertises; i++) {
-         int temp = getMinDst(dst, visited, numofVertises);
+/* only calculate the shortest path, no printing here */
+PathResult solveDijkstra(Graph *g, int start, int end) {
+    PathResult result;
 
-         if (temp == -1) {
-             break;
-         }
+    result.length = 0;
+    result.totalWeight = 0;
+    result.found = 0;
 
-         visited[temp] = 1;
+    int numofVertises = g->num_nodes;
 
-         Node *current = g->adj[temp];
+    int dst[numofVertises];
+    int visited[numofVertises];
+    int parent[numofVertises];
 
-         while (current != NULL) {
-             int v = current->id;
-             int w = current->weight;
+    for (int i = 0; i < numofVertises; i++) {
+        dst[i] = INF;
+        visited[i] = 0;
+        parent[i] = -1;
+    }
 
-             if (visited[v] == 0 && dst[temp] + w < dst[v]) {
-                 dst[v] = dst[temp] + w;
-                 parent[v] = temp;
-             }
+    dst[start] = 0;
 
-             current = current->next;
-         }
-     }
+    for (int i = 0; i < numofVertises; i++) {
+        int temp = getMinDst(dst, visited, numofVertises);
 
-     printDijkstraResult(parent, dst, start, end);
- }
+        if (temp == -1) {
+            break;
+        }
 
-#endif
+        visited[temp] = 1;
+
+        Node *current = g->adj[temp];
+
+        while (current != NULL) {
+            int v = current->id;
+            int w = current->weight;
+
+            if (visited[v] == 0 && dst[temp] + w < dst[v]) {
+                dst[v] = dst[temp] + w;
+                parent[v] = temp;
+            }
+
+            current = current->next;
+        }
+    }
+
+    if (dst[end] == INF) {
+        return result;
+    }
+
+    return buildPathResult(parent, start, end, dst[end]);
+}
+
+/* printing is outside the algorithm logic */
+void printPathResult(PathResult result) {
+    if (result.found == 0) {
+        printf("No path found\n");
+        return;
+    }
+
+    for (int i = 0; i < result.length; i++) {
+        printf("%d", result.nodes[i]);
+
+        if (i < result.length - 1) {
+            printf(" -> ");
+        }
+    }
+
+    printf("\n");
+    printf("%d\n", result.totalWeight);
+}
