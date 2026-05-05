@@ -9,6 +9,24 @@ static const Color NODE_ACCENTS[] = {
     { 50, 65, 90, 255 }, { 200, 150, 60, 255 }
 };
 
+
+
+static void DrawWeightBadge(Vector2 s, Vector2 d, int w, bool on_path) {
+    // 1. حساب نقطة المنتصف بين النود البداية والنهاية
+    Vector2 mid = { (s.x + d.x) * 0.5f, (s.y + d.y) * 0.5f };
+
+    // 2. تجهيز النص وحساب عرضه ليتوسط الدائرة
+    char buf[8];
+    snprintf(buf, sizeof(buf), "%d", w);
+    int tw = MeasureText(buf, 15);
+
+    // 3. رسم الدائرة: حمراء للمسار المختار، وداكنة للطرق العادية
+    DrawCircleV(mid, 14, on_path ? MM_HEART : (Color){45, 52, 70, 200});
+
+    // 4. رسم الرقم باللون الأبيض
+    DrawText(buf, (int)(mid.x - tw/2), (int)(mid.y - 7), 15, WHITE);
+}
+
 static void DrawHeart(float cx, float cy) {
     float s = 11.0f;
     DrawCircle(cx - s/2, cy - s/2, s/2, MM_HEART);

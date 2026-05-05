@@ -256,6 +256,7 @@ typedef struct {
 RenderCtx* InitRenderer(Graph* g, int src, int dst, int* path, int path_len);
 bool       RenderFrame(RenderCtx* ctx, Graph* g, float dt);
 void       FreeRenderer(RenderCtx* ctx);
+static void DrawWeightBadge(Vector2 s, Vector2 d, int w, bool on_path);
 
 
 #endif
