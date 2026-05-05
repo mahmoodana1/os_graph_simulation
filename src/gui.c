@@ -67,6 +67,23 @@ static void UpdateCar(Car* car, RenderCtx* ctx, Graph* g, float dt) {
         }
     }
 }
+
+RenderCtx* InitRenderer(Graph* g, int src, int dst, int* path, int path_len) {
+    RenderCtx* ctx = (RenderCtx*)calloc(1, sizeof(RenderCtx));
+    ctx->src = src; ctx->dst = dst; ctx->dijk_len = path_len;
+    memcpy(ctx->dijk_path, path, path_len * sizeof(int));
+    float cx = SCREEN_W/2, cy = SCREEN_H/2, R = 210;
+    for (int i = 0; i < g->num_nodes; i++) {
+        float a = (float)i / (float)g->num_nodes * 2.0f * 3.14159f - 1.57f;
+        ctx->positions[i] = (Vector2){ cx + R*cosf(a), cy + R*sinf(a) };
+        ctx->accents[i] = NODE_ACCENTS[i % 4];
+    }
+    memcpy(ctx->car.path, path, path_len * sizeof(int));
+    ctx->car.path_len = path_len; ctx->car.state = CAR_IDLE;
+    return ctx;
+}
+
+void FreeRenderer(RenderCtx* ctx) { if(ctx) free(ctx); }
 /// /// /// //// /// / / // /  /
 
 
