@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include "../include/graph.h"
+#include "string.h"
 
  int getMinDst(int dist[], int visited[], int n) {
      int min = INF;
@@ -86,5 +87,9 @@ void solveDijkstra(Graph *g, int start, int end) {
 
      printDijkstraResult(parent, dst, start, end);
  }
+
+
+
+
 
 #endif

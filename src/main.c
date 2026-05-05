@@ -3,6 +3,8 @@
 #include "../include/gui.h"
 #include <stdio.h>
 
+extern int BuildDijkstraPath(Graph* g, int start, int end, int* out_path); //
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         printf("Usage: %s <input_file>\n", argv[0]);
@@ -18,8 +20,33 @@ int main(int argc, char* argv[]) {
     }
 
     solveDijkstra(g, start_node, end_node);
-    startGui(g);
-    freeAll(g);
+    //startGui(g);
+    int src = 0, dst = 0;
+
+    // /* حساب المسار الأقصر باستخدام الأسماء الجديدة */
+    int path[64];
+    int path_len = BuildDijkstraPath(g, start_node, end_node, path);
+
+    InitWindow(SCREEN_W, SCREEN_H, "Graph Simulation – Milestone 3");
+    SetTargetFPS(60);
+
+     RenderCtx* ctx = InitRenderer(g, start_node, end_node, path, path_len);
+     if (!ctx) {
+         freeAll(g);
+         CloseWindow();
+         return 1;
+     }
+
+     while (!WindowShouldClose()) {
+         float dt = GetFrameTime();
+         if (!RenderFrame(ctx, g, dt)) break;
+     }
+
+     FreeRenderer(ctx);
+
+   freeAll(g);
+    CloseWindow();
+
 
     return 0;
 }
