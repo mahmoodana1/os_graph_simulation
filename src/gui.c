@@ -42,6 +42,31 @@ static void DrawNodeTile(RenderCtx* ctx, int idx) {
     DrawRectangleRounded((Rectangle){ r.x, r.y, NODE_SIZE, NODE_SIZE * 0.5f }, 0.25f, 6, c);
     DrawText(TextFormat("%d", idx), (int)(p.x - 5), (int)(p.y + 8), 14, MM_TEXT_DARK);
 }
+
+static void UpdateCar(Car* car, RenderCtx* ctx, Graph* g, float dt) {
+    car->timer += dt;
+    if (car->state == CAR_IDLE || car->state == CAR_NODE_WAIT) {
+        car->x = ctx->positions[car->path[car->seg]].x;
+        car->y = ctx->positions[car->path[car->seg]].y;
+        float wait = (car->seg == 0 || car->seg + 1 >= car->path_len) ? 0.0f : NODE_WAIT_SEC;
+        if (car->timer >= wait) {
+            if (car->seg + 1 >= car->path_len) { car->state = CAR_ARRIVED; return; }
+            car->timer = 0.0f; car->hop = 0;
+            Node* e = g->adj[car->path[car->seg]];
+            while(e) { if(e->id == car->path[car->seg+1]) { car->total_hops = e->weight; break; } e = e->next; }
+            car->state = CAR_MOVING;
+        }
+    } else if (car->state == CAR_MOVING) {
+        float t = fminf(car->timer / HOP_DURATION_SEC, 1.0f);
+        Vector2 s = ctx->positions[car->path[car->seg]], d = ctx->positions[car->path[car->seg+1]];
+        float prog = ((float)car->hop + t) / (float)car->total_hops;
+        car->x = s.x + prog*(d.x-s.x); car->y = s.y + prog*(d.y-s.y);
+        if (car->timer >= HOP_DURATION_SEC) {
+            car->timer = 0.0f; car->hop++;
+            if (car->hop >= car->total_hops) { car->seg++; car->state = CAR_NODE_WAIT; }
+        }
+    }
+}
 /// /// /// //// /// / / // /  /
 
 
