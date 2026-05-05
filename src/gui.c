@@ -84,6 +84,36 @@ RenderCtx* InitRenderer(Graph* g, int src, int dst, int* path, int path_len) {
 }
 
 void FreeRenderer(RenderCtx* ctx) { if(ctx) free(ctx); }
+
+bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
+    if (WindowShouldClose()) return false;
+    if (ctx->playing && ctx->car.state != CAR_ARRIVED) UpdateCar(&ctx->car, ctx, g, dt);
+    BeginDrawing(); ClearBackground(MM_BG);
+
+    for (int i = 0; i < g->num_nodes; i++) {
+        Node* e = g->adj[i];
+        while(e) {
+            bool on = false;
+            for(int k=0; k+1 < ctx->dijk_len; k++) if(ctx->dijk_path[k]==i && ctx->dijk_path[k+1]==e->id) on=true;
+            if(!on) DrawRoad(ctx->positions[i], ctx->positions[e->id], ROAD_THICK, MM_ROAD);
+            e = e->next;
+        }
+    }
+
+    for (int i = 0; i + 1 < ctx->dijk_len; i++) {
+        DrawRoad(ctx->positions[ctx->dijk_path[i]], ctx->positions[ctx->dijk_path[i+1]], ROAD_THICK + 6, MM_ROAD_PATH);
+    }
+
+    for (int i = 0; i < g->num_nodes; i++) DrawNodeTile(ctx, i);
+    if (ctx->playing && ctx->car.state != CAR_ARRIVED) DrawHeart(ctx->car.x, ctx->car.y);
+
+    int bx = SCREEN_W - 116, by = SCREEN_H - 50; Rectangle btn = { (float)bx, (float)by, 100, 36 };
+    DrawRectangleRounded(btn, 0.45f, 6, ctx->playing ? MM_BTN_STOP : MM_BTN_PLAY);
+    DrawText(ctx->playing ? " Stop" : " Play", bx + 25, by + 10, 16, WHITE);
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), btn)) ctx->playing = !ctx->playing;
+
+    EndDrawing(); return true;
+}
 /// /// /// //// /// / / // /  /
 
 
