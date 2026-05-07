@@ -20,15 +20,15 @@ build/graph.o: src/graph.c
 
 build/utils.o: src/utils.c
 	mkdir -p build
-	$(CC) $(CFLAGS) -c src/utils.c -o build/utils.o
+	$(CC) $(CFLAGS) -c src/utils.c -o build/utils.o	
 
 build/dijkstra.o: src/dijkstra.c
 	mkdir -p build
 	$(CC) $(CFLAGS) -c src/dijkstra.c -o build/dijkstra.o
   
-build/gui.o: src/gui.c
+  build/gui.o: src/dijkstra.c
 	mkdir -p build
-	$(CC) $(CFLAGS) -c src/gui.c  -o build/gui.o
+	$(CC) $(CFLAGS) -c src/gui.c -o build/gui.o
 
 build/main.o: src/main.c
 	mkdir -p build
