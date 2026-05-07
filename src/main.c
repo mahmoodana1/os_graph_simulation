@@ -9,7 +9,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Initialize the graph and read from the input file
     int start_node, end_node;
 
     Graph* g = loadGraph(argv[1], &start_node, &end_node);
@@ -17,8 +16,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    solveDijkstra(g, start_node, end_node);
+    PathResult result = solveDijkstra(g, start_node, end_node);
+
+    printPathResult(result);   // terminal
+
     startGui(g);
+
     freeAll(g);
 
     return 0;
