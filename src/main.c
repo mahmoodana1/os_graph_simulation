@@ -26,7 +26,6 @@ int main(int argc, char* argv[])
     //startGui(g);
     int src = 0, dst = 0;
 
-    // /* حساب المسار الأقصر باستخدام الأسماء الجديدة */
     int path[64];
     int path_len = BuildDijkstraPath(g, start_node, end_node, path);
 
