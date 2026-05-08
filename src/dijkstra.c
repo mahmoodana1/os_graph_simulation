@@ -1,8 +1,9 @@
+#ifndef DIJKSTRA_C
 #define INF 1000000
 
 #include "../include/dijkstra.h"
 #include "../include/graph.h"
-#include <stdio.h>
+#include "string.h"
 
 /* get the unvisited node with the smallest distance */
 int getMinDst(int dist[], int visited[], int n) {
@@ -102,3 +103,53 @@ PathResult solveDijkstra(Graph *g, int start, int end) {
 
   return buildPathResult(parent, start, end, dst[end]);
 }
+
+static int ReconstructPath(int parent[], int end, int* out_path)
+ {
+     int tmp[64], len = 0, v = end;
+     while (v != -1 && len < 64) {
+         tmp[len++] = v;
+         v = parent[v];
+     }
+     for (int i = 0; i < len; i++)
+         out_path[i] = tmp[len - 1 - i];
+     return len;
+ }
+
+/**
+ * Computes the shortest path using Dijkstra's Algorithm
+ * @param g The input graph structure
+ * @param start Source node ID
+ * @param end Destination node ID
+ * @param out_path Buffer to store the resulting node sequence
+ * @return Number of nodes in the shortest path
+ */
+int BuildDijkstraPath(Graph* g, int start, int end, int* out_path) {
+     int n = g->num_nodes;
+     int dist[64], visited[64], parent[64];
+     for (int i = 0; i < n; i++) { dist[i] = INF; visited[i] = 0; parent[i] = -1; }
+     dist[start] = 0;
+
+     for (int iter = 0; iter < n; iter++) {
+         int u = -1, minD = INF;
+         for (int i = 0; i < n; i++) if (!visited[i] && dist[i] < minD) { minD = dist[i]; u = i; }
+         if (u == -1 || u == end) break;
+         visited[u] = 1;
+
+         Node* edge = g->adj[u];
+         while (edge) {
+             if (!visited[edge->id] && dist[u] + edge->weight < dist[edge->id]) {
+                 dist[edge->id] = dist[u] + edge->weight;
+                 parent[edge->id] = u;
+             }
+             edge = edge->next;
+         }
+     }
+
+     if (dist[end] == INF) return 0;
+     int tmp[64], len = 0, v = end;
+     while (v != -1) { tmp[len++] = v; v = parent[v]; }
+     for (int i = 0; i < len; i++) out_path[i] = tmp[len - 1 - i];
+     return len;
+ }
+#endif

@@ -17,7 +17,6 @@ typedef struct {
 } Graph;
 
 // load data from file and create graph
-Graph *loadGraph(const char *file, int *start, int *end);
-void freeAll(Graph *g);
-
+Graph* loadGraph(const char* file, int* start, int* end);
+void freeAll(Graph* g);
 #endif
