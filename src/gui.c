@@ -10,6 +10,37 @@ static const Color NODE_ACCENTS[] = {
     {50, 65, 90, 255}, {200, 150, 60, 255}
 };
 
+/**
+ * Entry point for the graphical interface.
+ * Handles window lifecycle, context initialization, and the main frame loop.
+ */
+void startGui(Graph* g, int src, int dst) {
+    int path[64];
+
+    /* 1. Calculate the path internally to keep main.c clean */
+    int path_len = BuildDijkstraPath(g, src, dst, path);
+
+    if (path_len <= 0) {
+        printf("GUI Error: No valid path found between nodes %d and %d.\n", src, dst);
+        return;
+    }
+
+    /* 2. Initialize Raylib window context */
+    InitWindow(SCREEN_W, SCREEN_H, "OS Graph Simulation - Traffic Flow");
+    SetTargetFPS(60);
+
+    /* 3. Prepare the visual rendering context */
+    RenderCtx* ctx = InitRenderer(g, src, dst, path, path_len);
+
+    /* 4. Main Simulation loop */
+    while (RenderFrame(ctx, g, GetFrameTime()));
+
+    /* 5. Resource cleanup and window shutdown */
+    FreeRenderer(ctx);
+    CloseWindow();
+}
+
+
 /* Internal Helper: Cubic Bezier point calculation */
 static Vector2 GetBezierPoint(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t) {
     float invT = 1.0f - t;

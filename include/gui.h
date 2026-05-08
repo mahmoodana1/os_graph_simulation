@@ -27,6 +27,14 @@
 #define MM_BTN_PLAY      (Color){ 60, 155, 155, 255 }
 #define MM_BTN_STOP      (Color){ 210, 80, 70, 255 }
 
+
+/* --- High-level GUI Entry Point --- */
+/**
+ * Starts the GUI window, initializes the renderer, and runs the main loop.
+ * This encapsulates all raylib and rendering logic.
+ */
+void startGui(Graph* g, int src, int dst);
+
 /* --- Car State Machine --- */
 typedef enum {
     CAR_IDLE,

@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 
     solveDijkstra(g, start_node, end_node);
     //startGui(g);
-   
+    startGui(g, start_node, end_node);
 
     return 0;
 }
