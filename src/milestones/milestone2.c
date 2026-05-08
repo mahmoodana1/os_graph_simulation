@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-  int start_node, end_node;
+    int start_node, end_node;
 
     Graph* g = loadGraph(argv[1], &start_node, &end_node);
     if (!g)
@@ -26,5 +26,5 @@ int main(int argc, char* argv[])
 
     freeAll(g);
 
-  return 0;
+    return 0;
 }
