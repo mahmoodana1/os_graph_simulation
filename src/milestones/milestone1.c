@@ -1,6 +1,5 @@
-#include "../include/dijkstra.h"
-#include "../include/graph.h"
-#include "../include/gui.h"
+#include "../../include/dijkstra.h"
+#include "../../include/graph.h"
 #include <stdio.h>
 
 extern int BuildDijkstraPath(Graph* g, int start, int end, int* out_path); //
@@ -23,9 +22,6 @@ int main(int argc, char* argv[])
     }
 
     solveDijkstra(g, start_node, end_node);
-    //startGui(g);
-    startGui(g, start_node, end_node);
-
     printPathResult(result); 
     freeAll(g);
 
