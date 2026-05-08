@@ -26,7 +26,7 @@ build/dijkstra.o: src/dijkstra.c
 	mkdir -p build
 	$(CC) $(CFLAGS) -c src/dijkstra.c -o build/dijkstra.o
   
-  build/gui.o: src/dijkstra.c
+build/gui.o: src/gui.c
 	mkdir -p build
 	$(CC) $(CFLAGS) -c src/gui.c -o build/gui.o
 
