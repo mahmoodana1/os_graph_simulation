@@ -103,8 +103,17 @@ static int ReconstructPath(int parent[], int end, int* out_path)
 
 
 
-int BuildDijkstraPath(Graph* g, int start, int end, int* out_path)
- {
+
+
+/**
+ * Computes the shortest path using Dijkstra's Algorithm
+ * @param g The input graph structure
+ * @param start Source node ID
+ * @param end Destination node ID
+ * @param out_path Buffer to store the resulting node sequence
+ * @return Number of nodes in the shortest path
+ */
+int BuildDijkstraPath(Graph* g, int start, int end, int* out_path) {
      int n = g->num_nodes;
      int dist[64], visited[64], parent[64];
      for (int i = 0; i < n; i++) { dist[i] = INF; visited[i] = 0; parent[i] = -1; }
@@ -113,8 +122,9 @@ int BuildDijkstraPath(Graph* g, int start, int end, int* out_path)
      for (int iter = 0; iter < n; iter++) {
          int u = -1, minD = INF;
          for (int i = 0; i < n; i++) if (!visited[i] && dist[i] < minD) { minD = dist[i]; u = i; }
-         if (u == -1) break;
+         if (u == -1 || u == end) break;
          visited[u] = 1;
+
          Node* edge = g->adj[u];
          while (edge) {
              if (!visited[edge->id] && dist[u] + edge->weight < dist[edge->id]) {
@@ -124,11 +134,11 @@ int BuildDijkstraPath(Graph* g, int start, int end, int* out_path)
              edge = edge->next;
          }
      }
+
      if (dist[end] == INF) return 0;
      int tmp[64], len = 0, v = end;
      while (v != -1) { tmp[len++] = v; v = parent[v]; }
      for (int i = 0; i < len; i++) out_path[i] = tmp[len - 1 - i];
      return len;
  }
-
 #endif
