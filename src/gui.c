@@ -40,6 +40,27 @@ void startGui(Graph* g, int src, int dst) {
     CloseWindow();
 }
 
+/* Draws a weight marker badge (Heart/Circle style) */
+static void DrawWeightBadge(Vector2 s, Vector2 d, int w, bool on_path) {
+    // Calculate the middle point of the road
+    Vector2 mid = {(s.x + d.x) * 0.5f, (s.y + d.y) * 0.5f};
+
+    char buf[8];
+    snprintf(buf, sizeof(buf), "%d", w);
+    int fontSize = 16;
+    int tw = MeasureText(buf, fontSize);
+
+    // Draw a small circle as a background for the weight
+    // If it's on the active path, we use the Red color (MM_HEART)
+    Color badgeColor = on_path ? MM_HEART : (Color){45, 52, 70, 220};
+
+    DrawCircleV(mid, 14, badgeColor); // The badge circle
+    DrawCircleLinesV(mid, 14, WHITE); // White border to make it pop
+
+    // Draw the weight number inside the circle
+    DrawText(buf, (int)(mid.x - tw / 2), (int)(mid.y - fontSize / 2), fontSize, WHITE);
+}
+
 
 /* Internal Helper: Cubic Bezier point calculation */
 static Vector2 GetBezierPoint(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t) {
@@ -148,25 +169,33 @@ RenderCtx* InitRenderer(Graph* g, int src, int dst, int* path, int path_len) {
 /* Main Render Loop: Coordinates background, roads, nodes, and UI */
 bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
     if (WindowShouldClose()) return false;
-    if (ctx->playing && ctx->car.state != CAR_ARRIVED) UpdateCar(&ctx->car, ctx, g, dt);
+
+    /* Update animation logic */
+    if (ctx->playing && ctx->car.state != CAR_ARRIVED) {
+        UpdateCar(&ctx->car, ctx, g, dt);
+    }
 
     BeginDrawing();
     ClearBackground(MM_BG);
 
-    // 1. Background Environment
+    // 1. Background Environment (Rivers)
     DrawRiverBranch((Vector2){-100, 450}, (Vector2){300, 650}, (Vector2){500, 250}, (Vector2){1000, 350}, 30.0f);
     DrawRiverBranch((Vector2){300, -50}, (Vector2){200, 250}, (Vector2){450, 400}, (Vector2){700, 800}, 20.0f);
 
-    // 2. Roads Infrastructure
+    // 2. Roads Infrastructure (Regular Roads)
     for (int i = 0; i < g->num_nodes; i++) {
         Node* e = g->adj[i];
         while (e) {
             bool on = false;
-            for (int k = 0; k + 1 < ctx->dijk_len; k++)
+            for (int k = 0; k + 1 < ctx->dijk_len; k++) {
                 if (ctx->dijk_path[k] == i && ctx->dijk_path[k+1] == e->id) { on = true; break; }
+            }
             if (!on) {
                 DrawLineEx(ctx->positions[i], ctx->positions[e->id], ROAD_THICK, MM_ROAD);
                 DrawRoadArrow(ctx->positions[i], ctx->positions[e->id], (Color){200,200,200,150});
+
+                // ADDED: Draw weight badge for regular roads
+                DrawWeightBadge(ctx->positions[i], ctx->positions[e->id], e->weight, false);
             }
             e = e->next;
         }
@@ -174,28 +203,38 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
 
     // 3. Highlighted Shortest Path
     for (int i = 0; i + 1 < ctx->dijk_len; i++) {
-        Vector2 s = ctx->positions[ctx->dijk_path[i]], d = ctx->positions[ctx->dijk_path[i+1]];
+        int u = ctx->dijk_path[i], v = ctx->dijk_path[i+1];
+        Vector2 s = ctx->positions[u], d = ctx->positions[v];
+
         DrawLineEx(s, d, ROAD_THICK + 6, MM_ROAD_PATH);
         DrawRoadArrow(s, d, MM_YARD);
+
+        // ADDED: Find and draw weight badge for the active path
+        int weight = 1;
+        Node* tmp = g->adj[u];
+        while(tmp) { if(tmp->id == v) { weight = tmp->weight; break; } tmp = tmp->next; }
+        DrawWeightBadge(s, d, weight, true);
     }
 
-    // 4. Tiles and Entities
+    // 4. Tiles and Entities (Nodes and Car)
     for (int i = 0; i < g->num_nodes; i++) DrawNodeTile(ctx, i);
+
     if (ctx->playing && (ctx->car.state == CAR_MOVING || ctx->car.state == CAR_NODE_WAIT)) {
         Vector2 s = ctx->positions[ctx->car.path[ctx->car.seg]], d = ctx->positions[ctx->car.path[ctx->car.seg+1]];
         float angle = atan2f(d.y - s.y, d.x - s.x) * (180/PI);
         DrawRectanglePro((Rectangle){ctx->car.x, ctx->car.y, 16, 9}, (Vector2){8, 4.5f}, angle, (Color){50,120,220,255});
     }
 
+    // 5. Destination Reached Message (With Fixed Small Shadow)
     if (ctx->car.state == CAR_ARRIVED) {
-        // Define banner dimensions
         float bannerW = 350;
         float bannerH = 80;
         Rectangle banner = { (SCREEN_W - bannerW)/2, (SCREEN_H - bannerH)/2 - 50, bannerW, bannerH };
 
-        // Draw shadow and main banner (Rounded style)
-        //DrawRectangleRounded((Rectangle){ banner.x + 2, banner.y + 2, banner.x + bannerW, banner.y + bannerH }, 0.4f, 10, MM_SHADOW);
-        DrawRectangleRounded(banner, 0.4f, 10, MM_ROAD); // Dark banner to contrast with amber BG
+        // ADDED: Smaller, tighter shadow for the banner
+        DrawRectangleRounded((Rectangle){ banner.x + 2, banner.y + 2, bannerW - 4, bannerH - 4 }, 0.4f, 10, MM_SHADOW);
+
+        DrawRectangleRounded(banner, 0.4f, 10, MM_ROAD);
 
         // Add a thin accent line at the top of the banner
         DrawRectangleRounded((Rectangle){ banner.x, banner.y, bannerW, 8 }, 0.4f, 10, MM_BTN_PLAY);
@@ -203,24 +242,28 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
         // Center the text
         const char* msg = "DESTINATION REACHED";
         int fontSize = 22;
-        int textX = (int)(banner.x + (bannerW - MeasureText(msg, fontSize)) / 2) + 10;
+        int textX = (int)(banner.x + (bannerW - MeasureText(msg, fontSize)) / 2);
         int textY = (int)(banner.y + (bannerH - fontSize) / 2 + 4);
 
         DrawText(msg, textX, textY, fontSize, WHITE);
 
-        // Small "Success" icon (Heart/Circle)
+        // Success icon
         DrawCircleV((Vector2){banner.x + 30, banner.y + bannerH/2 + 4}, 10, MM_HEART);
     }
 
-    // 5. User Interface
+    // 6. User Interface (Buttons)
     Rectangle btn = {SCREEN_W - 116, SCREEN_H - 50, 100, 36};
     DrawRectangleRounded(btn, 0.45f, 6, ctx->playing ? MM_BTN_STOP : MM_BTN_PLAY);
-    DrawText(ctx->playing ? "Stop" : "Play", SCREEN_W - 91, SCREEN_H - 40, 16, WHITE);
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), btn)) ctx->playing = !ctx->playing;
-    // 5.5 Draw "Destination Reached" Message
 
+    const char* btnText = ctx->playing ? "Stop" : "Play";
+    DrawText(btnText, (int)(btn.x + (100 - MeasureText(btnText, 16))/2), (int)(btn.y + 10), 16, WHITE);
 
-    EndDrawing(); return true;
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), btn)) {
+        ctx->playing = !ctx->playing;
+    }
+
+    EndDrawing();
+    return true;
 }
 
 void FreeRenderer(RenderCtx* ctx) { if (ctx) free(ctx); }
