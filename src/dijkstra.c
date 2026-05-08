@@ -103,18 +103,6 @@ PathResult solveDijkstra(Graph *g, int start, int end) {
   return buildPathResult(parent, start, end, dst[end]);
 }
 
-static int ReconstructPath(int parent[], int end, int* out_path)
- {
-     int tmp[64], len = 0, v = end;
-     while (v != -1 && len < 64) {
-         tmp[len++] = v;
-         v = parent[v];
-     }
-     for (int i = 0; i < len; i++)
-         out_path[i] = tmp[len - 1 - i];
-     return len;
- }
-
 /**
  * Computes the shortest path using Dijkstra's Algorithm
  * @param g The input graph structure
