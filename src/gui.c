@@ -187,11 +187,38 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
         DrawRectanglePro((Rectangle){ctx->car.x, ctx->car.y, 16, 9}, (Vector2){8, 4.5f}, angle, (Color){50,120,220,255});
     }
 
+    if (ctx->car.state == CAR_ARRIVED) {
+        // Define banner dimensions
+        float bannerW = 350;
+        float bannerH = 80;
+        Rectangle banner = { (SCREEN_W - bannerW)/2, (SCREEN_H - bannerH)/2 - 50, bannerW, bannerH };
+
+        // Draw shadow and main banner (Rounded style)
+        //DrawRectangleRounded((Rectangle){ banner.x + 2, banner.y + 2, banner.x + bannerW, banner.y + bannerH }, 0.4f, 10, MM_SHADOW);
+        DrawRectangleRounded(banner, 0.4f, 10, MM_ROAD); // Dark banner to contrast with amber BG
+
+        // Add a thin accent line at the top of the banner
+        DrawRectangleRounded((Rectangle){ banner.x, banner.y, bannerW, 8 }, 0.4f, 10, MM_BTN_PLAY);
+
+        // Center the text
+        const char* msg = "DESTINATION REACHED";
+        int fontSize = 22;
+        int textX = (int)(banner.x + (bannerW - MeasureText(msg, fontSize)) / 2) + 10;
+        int textY = (int)(banner.y + (bannerH - fontSize) / 2 + 4);
+
+        DrawText(msg, textX, textY, fontSize, WHITE);
+
+        // Small "Success" icon (Heart/Circle)
+        DrawCircleV((Vector2){banner.x + 30, banner.y + bannerH/2 + 4}, 10, MM_HEART);
+    }
+
     // 5. User Interface
     Rectangle btn = {SCREEN_W - 116, SCREEN_H - 50, 100, 36};
     DrawRectangleRounded(btn, 0.45f, 6, ctx->playing ? MM_BTN_STOP : MM_BTN_PLAY);
     DrawText(ctx->playing ? "Stop" : "Play", SCREEN_W - 91, SCREEN_H - 40, 16, WHITE);
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), btn)) ctx->playing = !ctx->playing;
+    // 5.5 Draw "Destination Reached" Message
+
 
     EndDrawing(); return true;
 }
