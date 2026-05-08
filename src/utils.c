@@ -1,5 +1,4 @@
 #include "../include/utils.h"
-#include <stdio.h>
 #define INF 1000000
 
 /* printing is outside the algorithm logic */

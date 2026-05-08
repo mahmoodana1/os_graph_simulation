@@ -3,7 +3,6 @@
 
 #include "../include/dijkstra.h"
 #include "../include/graph.h"
-#include "string.h"
 
 /* get the unvisited node with the smallest distance */
 int getMinDst(int dist[], int visited[], int n) {

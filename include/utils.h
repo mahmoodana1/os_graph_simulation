@@ -3,6 +3,12 @@
 
 #define MAX_PATH 100
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <raylib.h>
+#include <stdbool.h>
+
 typedef struct {
   int nodes[MAX_PATH];
   int length;

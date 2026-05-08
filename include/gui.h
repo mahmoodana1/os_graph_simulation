@@ -1,9 +1,8 @@
 #ifndef GUI_H
 #define GUI_H
 
+#include "utils.h"
 #include "graph.h"
-#include <raylib.h>
-#include <stdbool.h>
 
 /* --- Simulation Layout Constants --- */
 #define SCREEN_W         900
