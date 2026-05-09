@@ -46,7 +46,9 @@ Bash
 ### milestone 2 execution
 ```
 ./sim data/input.txt
+```
 
 ### milestone 3 execution
+```
 ./sim data/input.txt
 ```
