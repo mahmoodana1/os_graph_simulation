@@ -41,7 +41,7 @@ void startGui(Graph* g, int src, int dst) {
 }
 
 /* Draws a weight marker badge (Heart/Circle style) */
-static void DrawWeightBadge(Vector2 s, Vector2 d, int w, bool on_path) {
+void DrawWeightBadge(Vector2 s, Vector2 d, int w, bool on_path) {
     // Calculate the middle point of the road
     Vector2 mid = {(s.x + d.x) * 0.5f, (s.y + d.y) * 0.5f};
 

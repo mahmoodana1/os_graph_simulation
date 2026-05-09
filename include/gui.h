@@ -34,7 +34,7 @@
  */
 void startGui(Graph* g, int src, int dst);
 
-static void DrawWeightBadge(Vector2 s, Vector2 d, int w, bool on_path);
+void DrawWeightBadge(Vector2 s, Vector2 d, int w, bool on_path);
 
 /* --- Car State Machine --- */
 typedef enum {
