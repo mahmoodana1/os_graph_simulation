@@ -92,6 +92,27 @@ static void GetEdgeBezier(Vector2 from, Vector2 to, Vector2 *c1, Vector2 *c2) {
                      to.y   - dir.y * 0.33f + perp.y * curve };
 }
 
+/* Draw a weight sign beside the road — offset perpendicularly with a thin post */
+static void DrawRoadSign(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p3,
+                         float t, int w, bool on_path) {
+    Vector2 roadPt = GetBezierPoint(p0, c1, c2, p3, t);
+    Vector2 tang   = GetBezierTangent(p0, c1, c2, p3, t);
+    float   tLen   = Vector2Length(tang);
+    if (tLen < 0.1f) return;
+
+    /* Right-perpendicular to travel direction */
+    Vector2 rperp  = { tang.y / tLen, -tang.x / tLen };
+    float   dist   = 24.0f;
+    Vector2 signPt = { roadPt.x + rperp.x * dist, roadPt.y + rperp.y * dist };
+
+    /* Thin post from road edge to sign base */
+    Vector2 postBase = { roadPt.x + rperp.x * (ROAD_THICK * 0.5f + 3.0f),
+                         roadPt.y + rperp.y * (ROAD_THICK * 0.5f + 3.0f) };
+    DrawLineEx(postBase, signPt, 1.5f, (Color){50, 50, 55, 210});
+
+    DrawWeightBadge(signPt, w, on_path);
+}
+
 /* Internal Helper: Draw curved river branches with floating labels */
 static void DrawRiverBranch(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p1, float thick) {
     Vector2 pts[4] = { p0, c1, c2, p1 };
@@ -226,8 +247,7 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
                 DrawSplineBezierCubic(rpts, 4, ROAD_THICK + 4.0f, (Color){0, 0, 0, 50});
                 DrawSplineBezierCubic(rpts, 4, ROAD_THICK, MM_ROAD);
                 DrawRoadArrow(ps, rc1, rc2, pd, (Color){200, 200, 200, 150});
-                DrawWeightBadge(GetBezierPoint(ps, rc1, rc2, pd, 0.15f), e->weight, false);
-                DrawWeightBadge(GetBezierPoint(ps, rc1, rc2, pd, 0.85f), e->weight, false);
+                DrawRoadSign(ps, rc1, rc2, pd, 0.5f, e->weight, false);
             }
             e = e->next;
         }
@@ -248,8 +268,7 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
         int weight = 1;
         Node* tmp = g->adj[u];
         while(tmp) { if(tmp->id == v) { weight = tmp->weight; break; } tmp = tmp->next; }
-        DrawWeightBadge(GetBezierPoint(s, pc1, pc2, d, 0.15f), weight, true);
-        DrawWeightBadge(GetBezierPoint(s, pc1, pc2, d, 0.85f), weight, true);
+        DrawRoadSign(s, pc1, pc2, d, 0.5f, weight, true);
     }
 
     // 4. Tiles and Entities (Nodes and Car)
