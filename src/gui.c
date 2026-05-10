@@ -47,7 +47,7 @@ void DrawWeightBadge(Vector2 mid, int w, bool on_path) {
     int fontSize = 15;
     int tw = MeasureText(buf, fontSize);
 
-    float padX = 8.0f, padY = 4.0f;
+    float padX = 6.0f, padY = 3.0f;
     float bw = (float)tw + padX * 2.0f;
     float bh = (float)fontSize + padY * 2.0f;
     Rectangle badge = { mid.x - bw * 0.5f, mid.y - bh * 0.5f, bw, bh };
@@ -226,7 +226,8 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
                 DrawSplineBezierCubic(rpts, 4, ROAD_THICK + 4.0f, (Color){0, 0, 0, 50});
                 DrawSplineBezierCubic(rpts, 4, ROAD_THICK, MM_ROAD);
                 DrawRoadArrow(ps, rc1, rc2, pd, (Color){200, 200, 200, 150});
-                DrawWeightBadge(GetBezierPoint(ps, rc1, rc2, pd, 0.5f), e->weight, false);
+                DrawWeightBadge(GetBezierPoint(ps, rc1, rc2, pd, 0.15f), e->weight, false);
+                DrawWeightBadge(GetBezierPoint(ps, rc1, rc2, pd, 0.85f), e->weight, false);
             }
             e = e->next;
         }
@@ -247,7 +248,8 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
         int weight = 1;
         Node* tmp = g->adj[u];
         while(tmp) { if(tmp->id == v) { weight = tmp->weight; break; } tmp = tmp->next; }
-        DrawWeightBadge(GetBezierPoint(s, pc1, pc2, d, 0.5f), weight, true);
+        DrawWeightBadge(GetBezierPoint(s, pc1, pc2, d, 0.15f), weight, true);
+        DrawWeightBadge(GetBezierPoint(s, pc1, pc2, d, 0.85f), weight, true);
     }
 
     // 4. Tiles and Entities (Nodes and Car)
