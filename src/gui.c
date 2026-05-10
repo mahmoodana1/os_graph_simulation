@@ -269,30 +269,58 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
         DrawRectanglePro((Rectangle){ctx->car.x, ctx->car.y, 22, 12}, (Vector2){11, 6}, angle, (Color){50, 120, 220, 255});
     }
 
-    // 5. Destination Reached Message (With Fixed Small Shadow)
+    // 5. Destination Reached Banner + Restart
     if (ctx->car.state == CAR_ARRIVED) {
-        float bannerW = 350;
-        float bannerH = 80;
-        Rectangle banner = { (SCREEN_W - bannerW)/2, (SCREEN_H - bannerH)/2 - 50, bannerW, bannerH };
+        float bW = 400.0f, bH = 130.0f;
+        Rectangle banner = { (SCREEN_W - bW) * 0.5f, (SCREEN_H - bH) * 0.5f - 30.0f, bW, bH };
 
-        // ADDED: Smaller, tighter shadow for the banner
-        DrawRectangleRounded((Rectangle){ banner.x + 2, banner.y + 2, bannerW - 4, bannerH - 4 }, 0.4f, 10, MM_SHADOW);
+        // Drop shadow
+        DrawRectangleRounded((Rectangle){banner.x+3, banner.y+3, bW, bH}, 0.3f, 10, (Color){0,0,0,90});
+        // Panel
+        DrawRectangleRounded(banner, 0.3f, 10, MM_ROAD);
+        // Left teal accent bar
+        DrawRectangleRounded((Rectangle){banner.x, banner.y, 6, bH}, 0.3f, 6, MM_BTN_PLAY);
+        // Divider line
+        DrawLineEx((Vector2){banner.x+16, banner.y+56}, (Vector2){banner.x+bW-16, banner.y+56}, 1.0f, (Color){255,255,255,35});
 
-        DrawRectangleRounded(banner, 0.4f, 10, MM_ROAD);
+        // Check circle + hand-drawn checkmark
+        Vector2 cc = { banner.x + 38.0f, banner.y + 30.0f };
+        DrawCircleV(cc, 14, MM_BTN_PLAY);
+        DrawLineEx((Vector2){cc.x-6, cc.y+1}, (Vector2){cc.x-1, cc.y+6}, 2.5f, WHITE);
+        DrawLineEx((Vector2){cc.x-1, cc.y+6}, (Vector2){cc.x+7, cc.y-4}, 2.5f, WHITE);
 
-        // Add a thin accent line at the top of the banner
-        DrawRectangleRounded((Rectangle){ banner.x, banner.y, bannerW, 8 }, 0.4f, 10, MM_BTN_PLAY);
+        // Title
+        const char* title = "DESTINATION REACHED";
+        DrawText(title, (int)(banner.x + 60), (int)(banner.y + 14), 22, WHITE);
 
-        // Center the text
-        const char* msg = "DESTINATION REACHED";
-        int fontSize = 22;
-        int textX = (int)(banner.x + (bannerW - MeasureText(msg, fontSize)) / 2);
-        int textY = (int)(banner.y + (bannerH - fontSize) / 2 + 4);
+        // Subtitle
+        const char* sub = "Shortest path found successfully.";
+        DrawText(sub, (int)(banner.x + 60), (int)(banner.y + 40), 13, (Color){190,200,210,200});
 
-        DrawText(msg, textX, textY, fontSize, WHITE);
+        // Restart button
+        float rbW = 150.0f, rbH = 36.0f;
+        Rectangle restartBtn = {
+            banner.x + (bW - rbW) * 0.5f,
+            banner.y + bH - rbH - 14.0f,
+            rbW, rbH
+        };
+        Color rbCol = (Color){210, 130, 35, 255};
+        DrawRectangleRounded((Rectangle){restartBtn.x+2, restartBtn.y+2, rbW, rbH}, 0.45f, 8, (Color){0,0,0,60});
+        DrawRectangleRounded(restartBtn, 0.45f, 8, rbCol);
+        const char* rbText = "Restart";
+        DrawText(rbText,
+            (int)(restartBtn.x + (rbW - MeasureText(rbText, 16)) * 0.5f),
+            (int)(restartBtn.y + (rbH - 16) * 0.5f),
+            16, WHITE);
 
-        // Success icon
-        DrawCircleV((Vector2){banner.x + 30, banner.y + bannerH/2 + 4}, 10, MM_HEART);
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), restartBtn)) {
+            ctx->car.state    = CAR_IDLE;
+            ctx->car.seg      = 0;
+            ctx->car.hop      = 0;
+            ctx->car.timer    = 0.0f;
+            ctx->car.total_hops = 0;
+            ctx->playing      = false;
+        }
     }
 
     // 6. User Interface (Buttons)
