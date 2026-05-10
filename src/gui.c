@@ -219,7 +219,8 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
     // 4. Tiles and Entities (Nodes and Car)
     for (int i = 0; i < g->num_nodes; i++) DrawNodeTile(ctx, i);
 
-    if (ctx->playing && (ctx->car.state == CAR_MOVING || ctx->car.state == CAR_NODE_WAIT)) {
+    if ((ctx->car.state == CAR_MOVING || ctx->car.state == CAR_NODE_WAIT) &&
+        ctx->car.seg + 1 < ctx->car.path_len) {
         Vector2 s = ctx->positions[ctx->car.path[ctx->car.seg]], d = ctx->positions[ctx->car.path[ctx->car.seg+1]];
         float angle = atan2f(d.y - s.y, d.x - s.x) * (180/PI);
         DrawRectanglePro((Rectangle){ctx->car.x, ctx->car.y, 16, 9}, (Vector2){8, 4.5f}, angle, (Color){50,120,220,255});
