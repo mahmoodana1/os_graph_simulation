@@ -40,10 +40,8 @@ void startGui(Graph* g, int src, int dst) {
     CloseWindow();
 }
 
-/* Draws a weight marker badge (Heart/Circle style) */
-void DrawWeightBadge(Vector2 s, Vector2 d, int w, bool on_path) {
-    Vector2 mid = {(s.x + d.x) * 0.5f, (s.y + d.y) * 0.5f};
-
+/* Draws a weight marker badge at an explicit midpoint position */
+void DrawWeightBadge(Vector2 mid, int w, bool on_path) {
     char buf[8];
     snprintf(buf, sizeof(buf), "%d", w);
     int fontSize = 15;
@@ -67,9 +65,31 @@ void DrawWeightBadge(Vector2 s, Vector2 d, int w, bool on_path) {
 static Vector2 GetBezierPoint(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t) {
     float invT = 1.0f - t;
     return (Vector2){
-        p0.x * (invT*invT*invT) + p1.x * (3*invT*invT*t) + p2.x * (3*invT*t*t) + p3.x * (t*t*t),
-        p0.y * (invT*invT*invT) + p1.y * (3*invT*invT*t) + p2.y * (3*invT*t*t) + p3.y * (t*t*t)
+        p0.x*(invT*invT*invT) + p1.x*(3*invT*invT*t) + p2.x*(3*invT*t*t) + p3.x*(t*t*t),
+        p0.y*(invT*invT*invT) + p1.y*(3*invT*invT*t) + p2.y*(3*invT*t*t) + p3.y*(t*t*t)
     };
+}
+
+/* Compute cubic bezier tangent (derivative) at t */
+static Vector2 GetBezierTangent(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t) {
+    float u = 1.0f - t;
+    return (Vector2){
+        3.0f * (u*u*(p1.x-p0.x) + 2.0f*u*t*(p2.x-p1.x) + t*t*(p3.x-p2.x)),
+        3.0f * (u*u*(p1.y-p0.y) + 2.0f*u*t*(p2.y-p1.y) + t*t*(p3.y-p2.y))
+    };
+}
+
+/* Compute control points for a road edge — curves left relative to travel direction */
+static void GetEdgeBezier(Vector2 from, Vector2 to, Vector2 *c1, Vector2 *c2) {
+    Vector2 dir = Vector2Subtract(to, from);
+    float len = Vector2Length(dir);
+    if (len < 1.0f) { *c1 = from; *c2 = to; return; }
+    Vector2 perp = { -dir.y / len, dir.x / len };
+    float curve = fminf(len * 0.20f, 40.0f);
+    *c1 = (Vector2){ from.x + dir.x * 0.33f + perp.x * curve,
+                     from.y + dir.y * 0.33f + perp.y * curve };
+    *c2 = (Vector2){ to.x   - dir.x * 0.33f + perp.x * curve,
+                     to.y   - dir.y * 0.33f + perp.y * curve };
 }
 
 /* Internal Helper: Draw curved river branches with floating labels */
@@ -85,13 +105,16 @@ static void DrawRiverBranch(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p1, floa
     }
 }
 
-/* Internal Helper: Draw directional road markers */
-static void DrawRoadArrow(Vector2 start, Vector2 end, Color color) {
-    Vector2 dir = Vector2Subtract(end, start);
-    if (Vector2Length(dir) < 40.0f) return;
-    float angle = atan2f(dir.y, dir.x) * (180.0f / PI);
-    DrawPoly(Vector2Add(start, Vector2Scale(dir, 0.25f)), 3, 8.0f, angle, color);
-    DrawPoly(Vector2Add(start, Vector2Scale(dir, 0.75f)), 3, 8.0f, angle, color);
+/* Internal Helper: Draw directional arrows along a bezier road */
+static void DrawRoadArrow(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p3, Color color) {
+    static const float ts[2] = { 0.25f, 0.75f };
+    for (int i = 0; i < 2; i++) {
+        Vector2 tang = GetBezierTangent(p0, c1, c2, p3, ts[i]);
+        if (Vector2Length(tang) < 1.0f) continue;
+        Vector2 pos = GetBezierPoint(p0, c1, c2, p3, ts[i]);
+        float angle = atan2f(tang.y, tang.x) * (180.0f / PI);
+        DrawPoly(pos, 3, 8.0f, angle, color);
+    }
 }
 
 /* Internal Helper: Draw node tile with shadows and decorations */
@@ -142,8 +165,12 @@ void UpdateCar(Car* car, RenderCtx* ctx, Graph* g, float dt) {
         }
     } else if (car->state == CAR_MOVING) {
         Vector2 s = ctx->positions[car->path[car->seg]], d = ctx->positions[car->path[car->seg+1]];
-        float progress = (car->hop + fminf(car->timer/HOP_DURATION_SEC, 1.0f)) / car->total_hops;
-        car->x = Lerp(s.x, d.x, progress); car->y = Lerp(s.y, d.y, progress);
+        Vector2 c1, c2;
+        GetEdgeBezier(s, d, &c1, &c2);
+        float denom = (float)(car->total_hops > 0 ? car->total_hops : 1);
+        float t = (car->hop + fminf(car->timer / HOP_DURATION_SEC, 1.0f)) / denom;
+        Vector2 pos = GetBezierPoint(s, c1, c2, d, t);
+        car->x = pos.x; car->y = pos.y;
         if (car->timer >= HOP_DURATION_SEC) {
             car->timer = 0; car->hop++;
             if (car->hop >= car->total_hops) { car->seg++; car->state = CAR_NODE_WAIT; }
@@ -193,10 +220,13 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
             }
             if (!on) {
                 Vector2 ps = ctx->positions[i], pd = ctx->positions[e->id];
-                DrawLineBezier(ps, pd, ROAD_THICK + 4.0f, (Color){0, 0, 0, 50});
-                DrawLineBezier(ps, pd, ROAD_THICK, MM_ROAD);
-                DrawRoadArrow(ps, pd, (Color){200, 200, 200, 150});
-                DrawWeightBadge(ps, pd, e->weight, false);
+                Vector2 rc1, rc2;
+                GetEdgeBezier(ps, pd, &rc1, &rc2);
+                Vector2 rpts[4] = { ps, rc1, rc2, pd };
+                DrawSplineBezierCubic(rpts, 4, ROAD_THICK + 4.0f, (Color){0, 0, 0, 50});
+                DrawSplineBezierCubic(rpts, 4, ROAD_THICK, MM_ROAD);
+                DrawRoadArrow(ps, rc1, rc2, pd, (Color){200, 200, 200, 150});
+                DrawWeightBadge(GetBezierPoint(ps, rc1, rc2, pd, 0.5f), e->weight, false);
             }
             e = e->next;
         }
@@ -207,15 +237,17 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
         int u = ctx->dijk_path[i], v = ctx->dijk_path[i+1];
         Vector2 s = ctx->positions[u], d = ctx->positions[v];
 
-        DrawLineBezier(s, d, ROAD_THICK + 10.0f, (Color){0, 0, 0, 50});
-        DrawLineBezier(s, d, ROAD_THICK + 6.0f, MM_ROAD_PATH);
-        DrawRoadArrow(s, d, MM_YARD);
+        Vector2 pc1, pc2;
+        GetEdgeBezier(s, d, &pc1, &pc2);
+        Vector2 ppts[4] = { s, pc1, pc2, d };
+        DrawSplineBezierCubic(ppts, 4, ROAD_THICK + 10.0f, (Color){0, 0, 0, 50});
+        DrawSplineBezierCubic(ppts, 4, ROAD_THICK + 6.0f, MM_ROAD_PATH);
+        DrawRoadArrow(s, pc1, pc2, d, MM_YARD);
 
-        // ADDED: Find and draw weight badge for the active path
         int weight = 1;
         Node* tmp = g->adj[u];
         while(tmp) { if(tmp->id == v) { weight = tmp->weight; break; } tmp = tmp->next; }
-        DrawWeightBadge(s, d, weight, true);
+        DrawWeightBadge(GetBezierPoint(s, pc1, pc2, d, 0.5f), weight, true);
     }
 
     // 4. Tiles and Entities (Nodes and Car)
@@ -223,8 +255,16 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
 
     if ((ctx->car.state == CAR_MOVING || ctx->car.state == CAR_NODE_WAIT) &&
         ctx->car.seg + 1 < ctx->car.path_len) {
-        Vector2 s = ctx->positions[ctx->car.path[ctx->car.seg]], d = ctx->positions[ctx->car.path[ctx->car.seg+1]];
-        float angle = atan2f(d.y - s.y, d.x - s.x) * (180.0f / PI);
+        Vector2 from = ctx->positions[ctx->car.path[ctx->car.seg]];
+        Vector2 to   = ctx->positions[ctx->car.path[ctx->car.seg+1]];
+        Vector2 cc1, cc2;
+        GetEdgeBezier(from, to, &cc1, &cc2);
+        float denom = (float)(ctx->car.total_hops > 0 ? ctx->car.total_hops : 1);
+        float t = (ctx->car.state == CAR_MOVING)
+            ? fmaxf(0.0f, fminf((ctx->car.hop + fminf(ctx->car.timer/HOP_DURATION_SEC, 1.0f)) / denom, 1.0f))
+            : 0.0f;
+        Vector2 tang = GetBezierTangent(from, cc1, cc2, to, t);
+        float angle = (Vector2Length(tang) > 0.1f) ? atan2f(tang.y, tang.x) * (180.0f / PI) : 0.0f;
         DrawRectanglePro((Rectangle){ctx->car.x + 4, ctx->car.y + 4, 22, 12}, (Vector2){11, 6}, angle, (Color){0, 0, 0, 70});
         DrawRectanglePro((Rectangle){ctx->car.x, ctx->car.y, 22, 12}, (Vector2){11, 6}, angle, (Color){50, 120, 220, 255});
     }
