@@ -42,22 +42,23 @@ void startGui(Graph* g, int src, int dst) {
 
 /* Draws a weight marker badge (Heart/Circle style) */
 void DrawWeightBadge(Vector2 s, Vector2 d, int w, bool on_path) {
-    // Calculate the middle point of the road
     Vector2 mid = {(s.x + d.x) * 0.5f, (s.y + d.y) * 0.5f};
 
     char buf[8];
     snprintf(buf, sizeof(buf), "%d", w);
-    int fontSize = 16;
+    int fontSize = 15;
     int tw = MeasureText(buf, fontSize);
 
-    // Draw a small circle as a background for the weight
-    // If it's on the active path, we use the Red color (MM_HEART)
+    float padX = 8.0f, padY = 4.0f;
+    float bw = (float)tw + padX * 2.0f;
+    float bh = (float)fontSize + padY * 2.0f;
+    Rectangle badge = { mid.x - bw * 0.5f, mid.y - bh * 0.5f, bw, bh };
+
     Color badgeColor = on_path ? MM_HEART : (Color){45, 52, 70, 220};
 
-    DrawCircleV(mid, 14, badgeColor); // The badge circle
-    DrawCircleLinesV(mid, 14, WHITE); // White border to make it pop
-
-    // Draw the weight number inside the circle
+    DrawRectangleRounded((Rectangle){badge.x + 2, badge.y + 2, bw, bh}, 0.6f, 8, (Color){0, 0, 0, 70});
+    DrawRectangleRounded((Rectangle){badge.x - 1.5f, badge.y - 1.5f, bw + 3.0f, bh + 3.0f}, 0.6f, 8, (Color){255, 255, 255, 200});
+    DrawRectangleRounded(badge, 0.6f, 8, badgeColor);
     DrawText(buf, (int)(mid.x - tw / 2), (int)(mid.y - fontSize / 2), fontSize, WHITE);
 }
 
@@ -191,11 +192,11 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
                 if (ctx->dijk_path[k] == i && ctx->dijk_path[k+1] == e->id) { on = true; break; }
             }
             if (!on) {
-                DrawLineEx(ctx->positions[i], ctx->positions[e->id], ROAD_THICK, MM_ROAD);
-                DrawRoadArrow(ctx->positions[i], ctx->positions[e->id], (Color){200,200,200,150});
-
-                // ADDED: Draw weight badge for regular roads
-                DrawWeightBadge(ctx->positions[i], ctx->positions[e->id], e->weight, false);
+                Vector2 ps = ctx->positions[i], pd = ctx->positions[e->id];
+                DrawLineBezier(ps, pd, ROAD_THICK + 4.0f, (Color){0, 0, 0, 50});
+                DrawLineBezier(ps, pd, ROAD_THICK, MM_ROAD);
+                DrawRoadArrow(ps, pd, (Color){200, 200, 200, 150});
+                DrawWeightBadge(ps, pd, e->weight, false);
             }
             e = e->next;
         }
@@ -206,7 +207,8 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
         int u = ctx->dijk_path[i], v = ctx->dijk_path[i+1];
         Vector2 s = ctx->positions[u], d = ctx->positions[v];
 
-        DrawLineEx(s, d, ROAD_THICK + 6, MM_ROAD_PATH);
+        DrawLineBezier(s, d, ROAD_THICK + 10.0f, (Color){0, 0, 0, 50});
+        DrawLineBezier(s, d, ROAD_THICK + 6.0f, MM_ROAD_PATH);
         DrawRoadArrow(s, d, MM_YARD);
 
         // ADDED: Find and draw weight badge for the active path
@@ -222,8 +224,9 @@ bool RenderFrame(RenderCtx* ctx, Graph* g, float dt) {
     if ((ctx->car.state == CAR_MOVING || ctx->car.state == CAR_NODE_WAIT) &&
         ctx->car.seg + 1 < ctx->car.path_len) {
         Vector2 s = ctx->positions[ctx->car.path[ctx->car.seg]], d = ctx->positions[ctx->car.path[ctx->car.seg+1]];
-        float angle = atan2f(d.y - s.y, d.x - s.x) * (180/PI);
-        DrawRectanglePro((Rectangle){ctx->car.x, ctx->car.y, 16, 9}, (Vector2){8, 4.5f}, angle, (Color){50,120,220,255});
+        float angle = atan2f(d.y - s.y, d.x - s.x) * (180.0f / PI);
+        DrawRectanglePro((Rectangle){ctx->car.x + 4, ctx->car.y + 4, 22, 12}, (Vector2){11, 6}, angle, (Color){0, 0, 0, 70});
+        DrawRectanglePro((Rectangle){ctx->car.x, ctx->car.y, 22, 12}, (Vector2){11, 6}, angle, (Color){50, 120, 220, 255});
     }
 
     // 5. Destination Reached Message (With Fixed Small Shadow)
