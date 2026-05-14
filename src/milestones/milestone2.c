@@ -3,6 +3,8 @@
 #include "../../include/gui.h"
 #include <stdio.h>
 
+extern int BuildDijkstraPath(Graph *g, int start, int end, int *out_path);
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         printf("Usage: %s <input_file>\n", argv[0]);
