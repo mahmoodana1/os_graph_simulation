@@ -14,6 +14,29 @@ To compile and run this project, you must be on a Linux environment and have the
 * `make`
 * `raylib`
 
+## Input File Format
+
+```txt
+6 8          # num_nodes  num_edges
+0 1 7        # src  dst  weight
+0 2 2
+1 3 3
+2 1 4
+2 3 8
+3 4 2
+4 5 1
+1 5 20
+3            # number of travelers
+0 5          # traveler 1: src  dst
+1 4          # traveler 2: src  dst
+2 3          # traveler 3: src  dst
+```
+
+- First line: number of nodes and edges
+- Next N lines: one edge per line `src dst weight`
+- Then: number of travelers
+- Last lines: one traveler per line `src dst`
+
 ## 🚀 Build & Run
 
 To ensure a clean environment and consistent results, follow these steps to compile and execute the simulation:
@@ -33,6 +56,9 @@ make milestone2
 # Compile the Milestone 3 target
 make milestone3
 
+# Compile the Milestone 4 target
+make milestone4
+
 ```
 # **2. Execute the Program**
 Run the compiled binary by passing your input file as a command-line argument:
@@ -49,6 +75,11 @@ Bash
 ```
 
 ### milestone 3 execution
+```
+./sim data/input.txt
+```
+
+### milestone 4 execution
 ```
 ./sim data/input.txt
 ```
