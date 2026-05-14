@@ -1,44 +1,60 @@
 CC = gcc
 CFLAGS = -Iinclude -Wall
 LIBS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+BUILD_DIR = build
 
-milestone1: dijkstra
+# the default target
+.PHONY: all
+all: milestone1 milestone2 milestone3 milestone4
 
-milestone2: sim
-milestone3: sim
+# mark milestones as phony targets to avoid conflicts with files of the same name
+.PHONY: milestone1 milestone2 milestone3 milestone4
 
-# linking
-dijkstra: build/milestone1.o build/graph.o build/dijkstra.o build/utils.o
-	$(CC) build/milestone1.o build/graph.o build/dijkstra.o build/utils.o -o dijkstra $(LIBS)
+# create the build directory once
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
-sim: build/milestone2.o build/graph.o build/dijkstra.o build/gui.o build/utils.o
-	$(CC) build/milestone2.o build/graph.o build/dijkstra.o build/gui.o build/utils.o -o sim $(LIBS)
+# Linking rules
+milestone1: $(BUILD_DIR)/milestone1.o $(BUILD_DIR)/graph.o $(BUILD_DIR)/dijkstra.o $(BUILD_DIR)/utils.o | $(BUILD_DIR)
+	$(CC) $^ -o dijkstra $(LIBS)
 
-# compile each C file into an object file individually
-build/graph.o: src/graph.c
-	mkdir -p build
-	$(CC) $(CFLAGS) -c src/graph.c -o build/graph.o
+milestone2: $(BUILD_DIR)/milestone2.o $(BUILD_DIR)/graph.o $(BUILD_DIR)/dijkstra.o $(BUILD_DIR)/gui.o $(BUILD_DIR)/utils.o | $(BUILD_DIR)
+	$(CC) $^ -o sim $(LIBS)
 
-build/utils.o: src/utils.c
-	mkdir -p build
-	$(CC) $(CFLAGS) -c src/utils.c -o build/utils.o	
+milestone3: milestone2
 
-build/dijkstra.o: src/dijkstra.c
-	mkdir -p build
-	$(CC) $(CFLAGS) -c src/dijkstra.c -o build/dijkstra.o
-  
-build/gui.o: src/gui.c
-	mkdir -p build
-	$(CC) $(CFLAGS) -c src/gui.c -o build/gui.o
+milestone4: $(BUILD_DIR)/milestone4.o $(BUILD_DIR)/graph.o $(BUILD_DIR)/dijkstra.o $(BUILD_DIR)/gui.o $(BUILD_DIR)/utils.o | $(BUILD_DIR)
+	$(CC) $^ -o sim $(LIBS)
 
-build/milestone1.o: src/milestones/milestone1.c
-	mkdir -p build
-	$(CC) $(CFLAGS) -c src/milestones/milestone1.c -o build/milestone1.o
+# creating the object files
+$(BUILD_DIR)/graph.o:
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c src/graph.c -o $(BUILD_DIR)/graph.o
 
-build/milestone2.o: src/milestones/milestone2.c
-	mkdir -p build
-	$(CC) $(CFLAGS) -c src/milestones/milestone2.c -o build/milestone2.o
+$(BUILD_DIR)/utils.o:
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c src/utils.c -o $(BUILD_DIR)/utils.o
+
+$(BUILD_DIR)/dijkstra.o:
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c src/dijkstra.c -o $(BUILD_DIR)/dijkstra.o
+
+$(BUILD_DIR)/gui.o:
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c src/gui.c -o $(BUILD_DIR)/gui.o
+
+$(BUILD_DIR)/milestone1.o:
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c src/milestones/milestone1.c -o $(BUILD_DIR)/milestone1.o
+
+$(BUILD_DIR)/milestone2.o:
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c src/milestones/milestone2.c -o $(BUILD_DIR)/milestone2.o
+
+$(BUILD_DIR)/milestone4.o:
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c src/milestones/milestone4.c -o $(BUILD_DIR)/milestone4.o
 
 clean:
-	rm -rf build dijkstra sim
+	rm -rf $(BUILD_DIR) dijkstra sim
 
