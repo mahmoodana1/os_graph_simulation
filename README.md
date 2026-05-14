@@ -33,6 +33,9 @@ make milestone2
 # Compile the Milestone 3 target
 make milestone3
 
+# Compile the Milestone 4 target
+make milestone4
+
 ```
 # **2. Execute the Program**
 Run the compiled binary by passing your input file as a command-line argument:
@@ -49,6 +52,11 @@ Bash
 ```
 
 ### milestone 3 execution
+```
+./sim data/input.txt
+```
+
+### milestone 4 execution
 ```
 ./sim data/input.txt
 ```
