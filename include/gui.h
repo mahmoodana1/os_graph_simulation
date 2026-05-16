@@ -27,6 +27,8 @@
 #define MM_BTN_STOP      (Color){ 210, 80, 70, 255 }
 
 
+Color distinct_colors[] = {RED,BLUE,GREEN,ORANGE,PURPLE,GOLD,LIME,MAGENTA,SKYBLUE,VIOLET};
+
 /* --- High-level GUI Entry Point --- */
 /**
  * Starts the GUI window, initializes the renderer, and runs the main loop.
@@ -37,30 +39,40 @@ void startGui(Graph* g, int src, int dst);
 void DrawWeightBadge(Vector2 mid, int w, bool on_path);
 
 /* --- Car State Machine --- */
-typedef enum {
+typedef enum
+{
     CAR_IDLE,
     CAR_MOVING,
     CAR_NODE_WAIT,
     CAR_ARRIVED
 } CarState;
 
-typedef struct {
-    float x, y;               /* Screen position */
-    int path[64];             /* Sequence of node IDs */
+typedef struct
+{
+    float x, y; /* Screen position */
+    int path[64]; /* Sequence of node IDs */
     int path_len, seg, hop;
-    int total_hops;           /* Weight of current edge */
+    int total_hops; /* Weight of current edge */
     float timer;
     CarState state;
+
+    Color color;
+
 } Car;
 
 /* --- Main Renderer Context --- */
-typedef struct {
+typedef struct
+{
     Vector2 positions[64];
     Color accents[64];
     int node_count, src, dst;
     int dijk_path[64], dijk_len;
     Car car;
     bool playing;
+
+    // We store the cars in a dynamic matrix
+    Car* cars;
+    int carCount;
 } RenderCtx;
 
 /* --- Public API --- */
