@@ -51,6 +51,7 @@ typedef struct {
     int total_hops;           /* Weight of current edge */
     float timer;
     CarState state;
+    Color color;
 } Car;
 
 /* --- Main Renderer Context --- */
@@ -59,7 +60,10 @@ typedef struct {
     Color accents[64];
     int node_count, src, dst;
     int dijk_path[64], dijk_len;
-    Car car;
+    //Car car;
+    Car* cars;
+    int numCars;
+
     bool playing;
 } RenderCtx;
 
