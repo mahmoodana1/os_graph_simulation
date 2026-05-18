@@ -18,5 +18,10 @@ typedef struct {
 
 // load data from file and create graph
 Graph* loadGraph(const char* file, int* start, int* end);
+
+////
+Graph* createGraph(int numNodes);
+void addEdge(Graph* graph, int src, int dst, int weight);
+/////
 void freeAll(Graph* g);
 #endif

@@ -9,8 +9,8 @@
 #define SCREEN_H         620
 #define NODE_SIZE        48
 #define ROAD_THICK       12.0f
-#define HOP_DURATION_SEC 0.30f  /* Time to move between weight units */
-#define NODE_WAIT_SEC    1.00f  /* Wait time at each intersection */
+#define HOP_DURATION_SEC 0.30f
+#define NODE_WAIT_SEC    1.00f
 
 /* --- Visual Theme Palette (Mini Motorways Style) --- */
 #define MM_BG            (Color){ 240, 185, 90, 255 }
@@ -26,14 +26,10 @@
 #define MM_BTN_PLAY      (Color){ 60, 155, 155, 255 }
 #define MM_BTN_STOP      (Color){ 210, 80, 70, 255 }
 
-
 /* --- High-level GUI Entry Point --- */
-/**
- * Starts the GUI window, initializes the renderer, and runs the main loop.
- * This encapsulates all raylib and rendering logic.
- */
-void startGui(Graph* g, int src, int dst);
-
+/* paths[i] is the node-ID array for traveler i, path_lens[i] is its length */
+//void startGui(Graph* g, int paths[][64], int* path_lens, int num_travelers);
+void startGui(Graph* g, int paths[][64], int* path_lens, int num_travelers);
 void DrawWeightBadge(Vector2 mid, int w, bool on_path);
 
 /* --- Car State Machine --- */
@@ -45,10 +41,10 @@ typedef enum {
 } CarState;
 
 typedef struct {
-    float x, y;               /* Screen position */
-    int path[64];             /* Sequence of node IDs */
+    float x, y;
+    int path[64];
     int path_len, seg, hop;
-    int total_hops;           /* Weight of current edge */
+    int total_hops;
     float timer;
     CarState state;
     Color color;
@@ -58,17 +54,14 @@ typedef struct {
 typedef struct {
     Vector2 positions[64];
     Color accents[64];
-    int node_count, src, dst;
-    int dijk_path[64], dijk_len;
-    //Car car;
+    int node_count;
     Car* cars;
     int numCars;
-
     bool playing;
 } RenderCtx;
 
 /* --- Public API --- */
-RenderCtx* InitRenderer(Graph* g, int src, int dst, int* path, int path_len);
+RenderCtx* InitRenderer(Graph* g, int num_cars);
 bool RenderFrame(RenderCtx* ctx, Graph* g, float dt);
 void FreeRenderer(RenderCtx* ctx);
 
