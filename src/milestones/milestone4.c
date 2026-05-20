@@ -5,4 +5,6 @@
 #include <unistd.h>
 #define MAX_TRAVELERS 16
 
-int main(int argc, char *argv[]) { return EXIT_SUCCESS; }
+extern int BuildDijkstraPath(Graph *g, int start, int end, int *out_path);
+
+int main(int argc, char *argv[]) {}
