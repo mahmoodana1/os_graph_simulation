@@ -83,3 +83,19 @@ Bash
 ```
 ./sim data/input.txt
 ```
+
+## Milestone 4
+
+### Multi-Process Simulation
+The simulation now forks one child process per traveler. Each child prints its PID to the terminal (`[PID] started`) and then calls `pause()`, keeping it alive for the duration of its journey.
+
+### Parent Manages Everything
+The parent process:
+- Reads the graph and traveler list from the input file
+- Computes the shortest path (Dijkstra) for every traveler
+- Forks all child processes
+- Runs the raylib GUI showing all travelers animating simultaneously, each in a distinct color
+
+### Signal Based Lifecycle
+The `startGui` function was extended to accept the child PIDs. As each car reaches its destination (`CAR_ARRIVED`), the parent sends `SIGTERM` to the corresponding child, terminating it cleanly. After the GUI window closes, any remaining children are also reaped via `waitpid` — no zombie processes.
+
