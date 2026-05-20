@@ -17,12 +17,14 @@ int main(int argc, char *argv[]) {
     // stores all travelers from input
     TravelerList travelers;
 
+
     // load graph + traveler queries
     Graph *g = loadGraph(argv[1], &travelers);
 
     if (!g) {
         return EXIT_FAILURE;
     }
+    PathResult paths[travelers.count];
     // just for testing
     printf("travelers count: %d\n", travelers.count);
     // print traveler queries
@@ -35,15 +37,15 @@ int main(int argc, char *argv[]) {
     // calculate path for each traveler
     for (int i = 0; i < travelers.count; i++) {
 
-        PathResult result = solveDijkstra(
-            g,
-            travelers.travelers[i].src,
-            travelers.travelers[i].dst
-        );
+        paths[i] = solveDijkstra(
+    g,
+    travelers.travelers[i].src,
+    travelers.travelers[i].dst
+);
 
-        printPathResult(result);
+        printPathResult(paths[i]);
     }
     return EXIT_SUCCESS;
 
-    return EXIT_SUCCESS;
+
 }
