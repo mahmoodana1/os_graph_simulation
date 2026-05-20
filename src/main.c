@@ -5,6 +5,28 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+
 int main(int argc, char *argv[]) {
+
+    // checking if input file was provided
+    if (argc < 2) {
+        printf("Usage: %s <input_file>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    // stores all travelers from input
+    TravelerList travelers;
+
+    // load graph + traveler queries
+    Graph *g = loadGraph(argv[1], &travelers);
+
+    if (!g) {
+        return EXIT_FAILURE;
+    }
+    // just for testing
+    printf("travelers count: %d\n", travelers.count);
+
+    return EXIT_SUCCESS;
+
     return EXIT_SUCCESS;
 }
