@@ -5,4 +5,4 @@
 #include <unistd.h>
 #define MAX_TRAVELERS 16
 
-int main(int argc, char *argv[]) {}
+int main(int argc, char *argv[]) { return EXIT_SUCCESS; }
