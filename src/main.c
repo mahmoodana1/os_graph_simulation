@@ -32,6 +32,17 @@ int main(int argc, char *argv[]) {
                travelers.travelers[i].src,
                travelers.travelers[i].dst);
     }
+    // calculate path for each traveler
+    for (int i = 0; i < travelers.count; i++) {
+
+        PathResult result = solveDijkstra(
+            g,
+            travelers.travelers[i].src,
+            travelers.travelers[i].dst
+        );
+
+        printPathResult(result);
+    }
     return EXIT_SUCCESS;
 
     return EXIT_SUCCESS;
