@@ -26,15 +26,8 @@ int main(int argc, char *argv[]) {
     }
     PathResult paths[travelers.count];
     pid_t pids[travelers.count];
-    // just for testing
-    printf("travelers count: %d\n", travelers.count);
-    // print traveler queries
-    for (int i = 0; i < travelers.count; i++) {
-        printf("traveler %d: %d -> %d\n",
-               i,
-               travelers.travelers[i].src,
-               travelers.travelers[i].dst);
-    }
+
+
     // calculate path for each traveler
     for (int i = 0; i < travelers.count; i++) {
 
@@ -44,7 +37,7 @@ int main(int argc, char *argv[]) {
     travelers.travelers[i].dst
 );
 
-        printPathResult(paths[i]);
+
         pid_t pid = fork();
 
         if (pid == 0) {
@@ -55,10 +48,7 @@ int main(int argc, char *argv[]) {
 
         pids[i] = pid;
     }
-    // check stored child pids
-    for (int i = 0; i < travelers.count; i++) {
-        printf("pids[%d] = %d\n", i, pids[i]);
-    }
+    
     return EXIT_SUCCESS;
 
 
