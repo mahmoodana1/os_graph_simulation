@@ -25,7 +25,13 @@ int main(int argc, char *argv[]) {
     }
     // just for testing
     printf("travelers count: %d\n", travelers.count);
-
+    // print traveler queries
+    for (int i = 0; i < travelers.count; i++) {
+        printf("traveler %d: %d -> %d\n",
+               i,
+               travelers.travelers[i].src,
+               travelers.travelers[i].dst);
+    }
     return EXIT_SUCCESS;
 
     return EXIT_SUCCESS;
