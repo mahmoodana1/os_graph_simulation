@@ -10,20 +10,20 @@
 #include <string.h>
 
 typedef struct {
-  int nodes[MAX_PATH];
-  int length;
-  int totalWeight;
-  int found;
+    int nodes[MAX_PATH];
+    int length;
+    int totalWeight;
+    int found;
 } PathResult;
 
 typedef struct {
-  int src;
-  int dst;
+    int src;
+    int dst;
 } TravelerQuery;
 
 typedef struct {
-  TravelerQuery *travelers;
-  int count;
+    TravelerQuery *travelers;
+    int count;
 } TravelerList;
 
 void printPathResult(PathResult result);

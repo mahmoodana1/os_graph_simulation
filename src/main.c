@@ -3,53 +3,47 @@
 #include "../include/gui.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 int main(int argc, char *argv[]) {
-
-    // checking if input file was provided
     if (argc < 2) {
         printf("Usage: %s <input_file>\n", argv[0]);
         return EXIT_FAILURE;
     }
 
-    // stores all travelers from input
     TravelerList travelers;
-
-
-    // load graph + traveler queries
     Graph *g = loadGraph(argv[1], &travelers);
 
     if (!g) {
         return EXIT_FAILURE;
     }
-    PathResult paths[travelers.count];
     pid_t pids[travelers.count];
-
+    int gui_paths[travelers.count][64];
+    int paths[travelers.count];
 
     // calculate path for each traveler
     for (int i = 0; i < travelers.count; i++) {
-
-        paths[i] = solveDijkstra(
-    g,
-    travelers.travelers[i].src,
-    travelers.travelers[i].dst
-);
-
+        paths[i] = BuildDijkstraPath(g, travelers.travelers[i].src,
+                                     travelers.travelers[i].dst, gui_paths[i]);
 
         pid_t pid = fork();
 
         if (pid == 0) {
             printf("[%d] started\n", getpid());
-            sleep(1);
+            pause();
             return EXIT_SUCCESS;
         }
-
         pids[i] = pid;
     }
-    
+
+    startGui(g, gui_paths, paths, travelers.count, pids);
+
+    // cleanup after GUI closes incase some processes are still alive
+    for (int i = 0; i < travelers.count; i++) {
+        waitpid(pids[i], NULL, 0);
+    }
+
     return EXIT_SUCCESS;
-
-
 }
