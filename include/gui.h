@@ -50,6 +50,7 @@ typedef struct {
     float timer;
     CarState state;
     Color color;
+    char      path_str[128];
 } Car;
 
 /* --- Main Renderer Context --- */

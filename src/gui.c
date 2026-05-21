@@ -377,6 +377,102 @@ static bool DrawButton(Rectangle r, const char *label, Color bg, Color hov) {
     DrawText(label, (int)(r.x + r.width * 0.5f - tw * 0.5f), (int)(r.y + r.height * 0.5f - 7), 14, C_BTN_TXT);
     return clicked;
 }
+void DrawPanel(RenderCtx *ctx) {
+    DrawRectangle(PANEL_X, 0, PANEL_W, WIN_H, C_PANEL_BG);
+    DrawRectangle(PANEL_X, 0, 1, WIN_H, C_PANEL_SEP);
+    int y = 18;
+
+    DrawText("TRAFFIC SIM", PANEL_X + 16, y, 19, C_PANEL_TITLE);
+    y += 22;
+    DrawText("OS Course  —  Graph Visualizer", PANEL_X + 16, y, 10, (Color){85, 125, 180, 190});
+    y += 16;
+    DrawRectangle(PANEL_X + 12, y, PANEL_W - 24, 1, C_PANEL_SEP);
+    y += 10;
+
+    const char *status = ctx->all_arrived ? "COMPLETE" : ctx->paused ? "PAUSED" : ctx->running ? "RUNNING" : "READY";
+    Color sc = ctx->all_arrived ? C_SUCCESS_TXT : ctx->paused ? (Color){255, 195, 50, 255} : C_PANEL_TITLE;
+
+    DrawText("STATUS", PANEL_X + 16, y, 10, (Color){75, 115, 165, 200});
+    int stw = MeasureText(status, 11);
+    DrawText(status, PANEL_X + PANEL_W - 16 - stw, y, 11, sc);
+    y += 18;
+    DrawRectangle(PANEL_X + 12, y, PANEL_W - 24, 1, C_PANEL_SEP);
+    y += 10;
+
+    DrawText("TRAVELERS", PANEL_X + 16, y, 11, C_PANEL_TXT);
+    y += 16;
+
+    for (int i = 0; i < ctx->numCars; i++) {
+        Car   *c   = &ctx->cars[i];
+        int    ry  = y + i * 56;
+        float  bx  = (float)(PANEL_X + 14);
+        float  bw  = (float)(PANEL_W - 28);
+
+        DrawRectangleRounded((Rectangle){bx, (float)ry, 11, 11}, 0.4f, 4, c->color);
+        char lbl[24]; snprintf(lbl, sizeof lbl, "Traveler %d", c->id + 1);
+        DrawText(lbl, PANEL_X + 30, ry, 12, C_PANEL_TXT);
+
+        const char *st = c->state == CAR_ARRIVED ? "ARRIVED" : c->state == CAR_MOVING ? "MOVING" : c->state == CAR_NODE_WAIT ? "WAITING" : "IDLE";
+        Color stc = c->state == CAR_ARRIVED ? C_SUCCESS_TXT : c->state == CAR_MOVING ? C_PANEL_TITLE : (Color){180, 140, 60, 220};
+        int sw = MeasureText(st, 10);
+        DrawText(st, PANEL_X + PANEL_W - 14 - sw, ry, 10, stc);
+
+        float prog = 0.0f;
+        if (c->path_len > 1) {
+            prog = ((float)c->path_idx + c->t) / (float)(c->path_len - 1);
+            if (prog > 1.0f) prog = 1.0f;
+        } else if (c->state == CAR_ARRIVED) { prog = 1.0f; }
+
+        DrawRectangle((int)bx, ry + 16, (int)bw, 4, (Color){18, 30, 58, 255});
+        DrawRectangle((int)bx, ry + 16, (int)(bw * prog), 4, c->color);
+
+        char ps[52]; int plen = (int)strlen(c->path_str);
+        if (plen > 46) { strncpy(ps, c->path_str, 43); ps[43] = '.'; ps[44] = '.'; ps[45] = '.'; ps[46] = '\0'; }
+        else { strncpy(ps, c->path_str, sizeof ps - 1); ps[sizeof ps - 1] = '\0'; }
+        DrawText(ps, (int)bx, ry + 24, 9, (Color){90, 130, 175, 200});
+
+        DrawRectangle(PANEL_X + 12, ry + 40, PANEL_W - 24, 1, (Color){18, 30, 55, 180});
+    }
+
+    y += ctx->numCars * 56 + 8;
+    DrawRectangle(PANEL_X + 12, y, PANEL_W - 24, 1, C_PANEL_SEP);
+    y += 14;
+
+    float p_bx = (float)(PANEL_X + BTN_MX);
+    float p_bw = (float)(PANEL_W - BTN_MX * 2);
+
+    const char *play_lbl = (!ctx->running && !ctx->paused) ? "PLAY" : ctx->running ? "PAUSE" : "RESUME";
+    Color play_bg = (!ctx->running && !ctx->paused) ? C_BTN_PLAY : ctx->running ? C_BTN_IDLE : C_BTN_PLAY;
+    Color play_hov = (!ctx->running && !ctx->paused) ? C_BTN_PLAY_HOV : ctx->running ? C_BTN_HOVER : C_BTN_PLAY_HOV;
+
+    if (DrawButton((Rectangle){p_bx, (float)y, p_bw, BTN_H}, play_lbl, play_bg, play_hov)) {
+        if (!ctx->all_arrived) {
+            if (!ctx->running && !ctx->paused) ctx->running = true;
+            else if (ctx->running) { ctx->running = false; ctx->paused = true; }
+            else { ctx->running = true; ctx->paused = false; }
+        }
+    }
+    y += BTN_H + 9;
+
+    if (DrawButton((Rectangle){p_bx, (float)y, p_bw, BTN_H}, "RESTART", C_BTN_IDLE, C_BTN_HOVER)) {
+        for (int i = 0; i < ctx->numCars; i++) {
+            Car *c      = &ctx->cars[i];
+            c->path_idx = 0; c->t = 0.0f; c->timer = 0.0f;
+            c->state    = (c->path && c->path_len > 1) ? CAR_MOVING : CAR_ARRIVED;
+            if (c->path && c->path_len > 0) {
+                c->x = ctx->positions[c->path[0]].x; c->y = ctx->positions[c->path[0]].y;
+            }
+        }
+        ctx->all_arrived = false; ctx->running = false; ctx->paused = false;
+    }
+    y += BTN_H + 14;
+
+    DrawRectangle(PANEL_X + 12, y, PANEL_W - 24, 1, C_PANEL_SEP);
+    y += 10;
+    char info[64]; snprintf(info, sizeof info, "Nodes: %d     Travelers: %d", ctx->num_nodes, ctx->num_cars);
+    DrawText(info, PANEL_X + 14, y, 10, (Color){65, 98, 148, 190});
+}
+
 
 bool RenderFrame(RenderCtx* ctx, Graph* g, float dt)
 {
