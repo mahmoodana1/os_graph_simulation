@@ -297,62 +297,32 @@ void DrawEdge(Vector2 a, Vector2 b, int weight) {
 
 void UpdateCar(Car* car, RenderCtx* ctx, Graph* g, float dt)
 {
-    if (car->path_len <= 0)
-    {
-        car->state = CAR_ARRIVED;
+    if (car->state == CAR_ARRIVED || car->state == CAR_IDLE || !car->path) return;
+
+    if (car->state == CAR_NODE_WAIT) {
+        car->timer -= dt;
+        if (car->timer <= 0.0f) {
+            car->path_idx++;
+            if (car->path_idx >= car->path_len - 1) {
+                car->state = CAR_ARRIVED;
+                int last   = car->path[car->path_len - 1];
+                car->x     = ctx->positions[last].x; car->y     = ctx->positions[last].y;
+            } else { car->state = CAR_MOVING; car->t     = 0.0f; }
+        }
         return;
     }
 
-    car->timer += dt;
-    if (car->state == CAR_IDLE || car->state == CAR_NODE_WAIT)
-    {
-        car->x = ctx->positions[car->path[car->seg]].x;
-        car->y = ctx->positions[car->path[car->seg]].y;
-        float wait = (car->seg == 0) ? 0.0f : NODE_WAIT_SEC;
-        if (car->timer >= wait)
-        {
-            if (car->seg + 1 >= car->path_len)
-            {
-                car->state = CAR_ARRIVED;
-                return;
-            }
-            car->timer = 0;
-            car->hop = 0;
-            Node* e = g->adj[car->path[car->seg]];
-            while (e)
-            {
-                if (e->id == car->path[car->seg + 1])
-                {
-                    car->total_hops = e->weight;
-                    break;
-                }
-                e = e->next;
-            }
-            car->state = CAR_MOVING;
-        }
-    }
-    else if (car->state == CAR_MOVING)
-    {
-        Vector2 s = ctx->positions[car->path[car->seg]];
-        Vector2 d = ctx->positions[car->path[car->seg + 1]];
-        Vector2 c1, c2;
-        GetEdgeBezier(s, d, &c1, &c2);
-        float denom = (float)(car->total_hops > 0 ? car->total_hops : 1);
-        float t =
-            (car->hop + fminf(car->timer / HOP_DURATION_SEC, 1.0f)) / denom;
-        Vector2 pos = GetBezierPoint(s, c1, c2, d, t);
-        car->x = pos.x;
-        car->y = pos.y;
-        if (car->timer >= HOP_DURATION_SEC)
-        {
-            car->timer = 0;
-            car->hop++;
-            if (car->hop >= car->total_hops)
-            {
-                car->seg++;
-                car->state = CAR_NODE_WAIT;
-            }
-        }
+    car->t += car->speed * dt;
+    if (car->t >= 1.0f) {
+        int ni    = car->path[car->path_idx + 1];
+        car->x    = ctx->positions[ni].x; car->y    = ctx->positions[ni].y;
+        car->t    = 1.0f; car->state      = CAR_NODE_WAIT; car->wait_timer = 0.22f;
+    } else {
+        int     from = car->path[car->path_idx];
+        int     to   = car->path[car->path_idx + 1];
+        Vector2 c1, c2; EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
+        Vector2 pos = BezPt(ctx->positions[from], c1, c2, ctx->positions[to], car->t);
+        car->x = pos.x; car->y = pos.y;
     }
 }
 
