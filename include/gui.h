@@ -51,6 +51,7 @@ typedef struct {
     CarState state;
     Color color;
     char      path_str[128];
+    float     last_ca, last_sa; /* last heading, held across non-moving states */
 } Car;
 
 /* --- Main Renderer Context --- */
@@ -69,6 +70,7 @@ RenderCtx *InitRenderer(int num_nodes, Vector2 *positions, int num_cars);
 bool RenderFrame(RenderCtx *ctx, Graph *g, float dt);
 void FreeRenderer(RenderCtx *ctx);
 void DrawArrowAt(Vector2 pos, float ca, float sa, float sz, Color col);
+void DrawCarShape(float cx, float cy, float ca, float sa, float sz, Color col);
 void DrawBackground(void);
 
 #endif

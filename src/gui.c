@@ -379,14 +379,16 @@ void UpdateCars(RenderCtx* ctx, float dt)
 
 void DrawSingleCar(Car *car, RenderCtx *ctx) {
     if (car->state == CAR_IDLE) return;
-    float cx = car->x, cy = car->y, ca = 1.0f, sa = 0.0f;
+    float cx = car->x, cy = car->y;
+    float ca = car->last_ca, sa = car->last_sa;
+    if (ca == 0.0f && sa == 0.0f) { ca = 1.0f; sa = 0.0f; }
 
     if (car->state == CAR_MOVING && car->path && car->path_idx < car->path_len - 1) {
         Vector2 a = ctx->positions[car->path[car->path_idx]], b = ctx->positions[car->path[car->path_idx + 1]];
         Vector2 c1, c2; EdgeCP(a, b, &c1, &c2);
         Vector2 tan = BezTan(a, c1, c2, b, car->t);
         float   tl  = sqrtf(tan.x*tan.x + tan.y*tan.y);
-        if (tl > 0.001f) { ca = tan.x / tl; sa = tan.y / tl; }
+        if (tl > 0.001f) { ca = tan.x / tl; sa = tan.y / tl; car->last_ca = ca; car->last_sa = sa; }
     }
 
     Color glow = car->color; glow.a = 45;
@@ -401,6 +403,20 @@ void DrawSingleCar(Car *car, RenderCtx *ctx) {
     }
     DrawCarShape(cx, cy, ca, sa, CAR_SZ, car->color);
     DrawCircleV((Vector2){cx, cy}, 2.2f, (Color){255, 255, 255, 190});
+}
+
+void DrawPlayOverlay(RenderCtx *ctx) {
+    float cx = GRAPH_W * 0.5f, cy = WIN_H * 0.5f, r = 50.0f, pulse = (sinf(s_time * 1.9f) + 1.0f) * 0.5f;
+    DrawRectangle(0, 0, GRAPH_W, WIN_H, (Color){0, 0, 0, 60});
+    DrawCircleV((Vector2){cx, cy}, r + 14.0f + pulse * 6.0f, (Color){0, 200, 255, (unsigned char)(28 + 22 * pulse)});
+    DrawCircleV((Vector2){cx, cy}, r, (Color){10, 18, 42, 235});
+    DrawCircleLines((int)cx, (int)cy, r, (Color){0, 190, 255, (unsigned char)(170 + 70 * pulse)});
+    DrawTriangle((Vector2){cx + 24.0f, cy}, (Vector2){cx - 5.0f, cy - 18.0f}, (Vector2){cx - 5.0f, cy + 18.0f}, (Color){0, 210, 255, 230});
+    DrawText("PRESS PLAY TO START", (int)(cx - MeasureText("PRESS PLAY TO START", 12) * 0.5f), (int)(cy + r + 14.0f), 12, (Color){0, 180, 255, (unsigned char)(160 + 70 * pulse)});
+
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointCircle(GetMousePosition(), (Vector2){cx, cy}, r)) {
+        ctx->running = true; ctx->paused  = false;
+    }
 }
 
 RenderCtx* InitRenderer(int num_nodes, Vector2* positions, int num_cars)
@@ -576,14 +592,14 @@ void DrawCarShape(float cx, float cy, float ca, float sa, float sz, Color col)
     Vector2 bl = {cx - ca * sz * 0.75f + cp * sz * 0.95f, cy - sa * sz * 0.75f + sp * sz * 0.95f};
     Vector2 br = {cx - ca * sz * 0.75f - cp * sz * 0.95f, cy - sa * sz * 0.75f - sp * sz * 0.95f};
 
-    DrawTriangle((Vector2){front.x + 2.5f, front.y + 2.5f}, (Vector2){bl.x + 2.5f, bl.y + 2.5f},
-                 (Vector2){br.x + 2.5f, br.y + 2.5f}, C_CAR_SHADOW);
-    DrawTriangle(front, bl, br, col);
+    DrawTriangle((Vector2){front.x + 2.5f, front.y + 2.5f}, (Vector2){br.x + 2.5f, br.y + 2.5f},
+                 (Vector2){bl.x + 2.5f, bl.y + 2.5f}, C_CAR_SHADOW);
+    DrawTriangle(front, br, bl, col);
 
     Vector2 hf = {cx + ca * sz * 0.7f, cy + sa * sz * 0.7f};
     Vector2 hl = {cx - ca * sz * 0.1f + cp * sz * 0.45f, cy - sa * sz * 0.1f + sp * sz * 0.45f};
     Vector2 hr = {cx - ca * sz * 0.1f - cp * sz * 0.45f, cy - sa * sz * 0.1f - sp * sz * 0.45f};
-    DrawTriangle(hf, hl, hr, (Color){255, 255, 255, 55});
+    DrawTriangle(hf, hr, hl, (Color){255, 255, 255, 55});
 }
 
 
