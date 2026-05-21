@@ -30,7 +30,7 @@
 /* --- High-level GUI Entry Point --- */
 /* paths[i] is the node-ID array for traveler i, path_lens[i] is its length */
 // void startGui(Graph* g, int paths[][64], int* path_lens, int num_travelers);
-void startGui(Graph *g, int paths[][64], int *path_lens, int num_travelers, pid_t *pids);
+void startGui(Graph *g, int paths[][64], int *path_lens, int num_travelers);
 void DrawWeightBadge(Vector2 mid, int w, bool on_path);
 
 /* --- Car State Machine --- */
@@ -64,7 +64,7 @@ typedef struct {
 } RenderCtx;
 
 /* --- Public API --- */
-RenderCtx *InitRenderer(Graph *g, int num_cars);
+RenderCtx *InitRenderer(int num_nodes, Vector2 *positions, int num_cars);
 bool RenderFrame(RenderCtx *ctx, Graph *g, float dt);
 void FreeRenderer(RenderCtx *ctx);
 
