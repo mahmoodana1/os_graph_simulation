@@ -309,7 +309,7 @@ void DrawEdges(RenderCtx* ctx, Graph* g)
             DrawEdge(ctx->positions[i], ctx->positions[e->id], e->weight);
 }
 
-void UpdateCar(Car* car, RenderCtx* ctx, Graph* g, float dt)
+void UpdateCar(Car* car, RenderCtx* ctx, float dt)
 {
     if (car->state == CAR_ARRIVED || car->state == CAR_IDLE || !car->path) return;
 
@@ -375,6 +375,32 @@ void UpdateCars(RenderCtx* ctx, float dt)
             ctx->running = false;
         }
     }
+}
+
+void DrawSingleCar(Car *car, RenderCtx *ctx) {
+    if (car->state == CAR_IDLE) return;
+    float cx = car->x, cy = car->y, ca = 1.0f, sa = 0.0f;
+
+    if (car->state == CAR_MOVING && car->path && car->path_idx < car->path_len - 1) {
+        Vector2 a = ctx->positions[car->path[car->path_idx]], b = ctx->positions[car->path[car->path_idx + 1]];
+        Vector2 c1, c2; EdgeCP(a, b, &c1, &c2);
+        Vector2 tan = BezTan(a, c1, c2, b, car->t);
+        float   tl  = sqrtf(tan.x*tan.x + tan.y*tan.y);
+        if (tl > 0.001f) { ca = tan.x / tl; sa = tan.y / tl; }
+    }
+
+    Color glow = car->color; glow.a = 45;
+    DrawCircleV((Vector2){cx, cy}, CAR_SZ + 5.5f, glow);
+
+    if (car->state == CAR_MOVING && car->path && car->path_idx < car->path_len - 1) {
+        Vector2 a = ctx->positions[car->path[car->path_idx]], b = ctx->positions[car->path[car->path_idx + 1]];
+        Vector2 c1, c2; EdgeCP(a, b, &c1, &c2);
+        float t1 = car->t - 0.045f, t2 = car->t - 0.09f;
+        if (t1 > 0.0f) { Color tc = car->color; tc.a = 70; DrawCircleV(BezPt(a, c1, c2, b, t1), CAR_SZ * 0.48f, tc); }
+        if (t2 > 0.0f) { Color tc = car->color; tc.a = 28; DrawCircleV(BezPt(a, c1, c2, b, t2), CAR_SZ * 0.3f, tc); }
+    }
+    DrawCarShape(cx, cy, ca, sa, CAR_SZ, car->color);
+    DrawCircleV((Vector2){cx, cy}, 2.2f, (Color){255, 255, 255, 190});
 }
 
 RenderCtx* InitRenderer(int num_nodes, Vector2* positions, int num_cars)
@@ -539,7 +565,7 @@ void DrawPanel(RenderCtx* ctx)
     DrawRectangle(PANEL_X + 12, y, PANEL_W - 24, 1, C_PANEL_SEP);
     y += 10;
     char info[64];
-    snprintf(info, sizeof info, "Nodes: %d     Travelers: %d", ctx->num_nodes, ctx->num_cars);
+    snprintf(info, sizeof info, "Nodes: %d     Travelers: %d", ctx->node_count, ctx->numCars);
     DrawText(info, PANEL_X + 14, y, 10, (Color){65, 98, 148, 190});
 }
 
