@@ -50,38 +50,47 @@
 #define C_TRAIL2       CLITERAL(Color){255, 255, 255,  22}
 #define C_FPS_TXT      CLITERAL(Color){ 60,  90, 140, 200}
 
+#define ROAD_THICK      12.0f
+#define MM_HEART        CLITERAL(Color){ 230,  50,  50, 255 }
+#define MM_RIVER        CLITERAL(Color){ 160, 220, 230, 255 }
+#define MM_RIVER_LABEL  CLITERAL(Color){ 140, 190, 200, 160 }
 
 static float s_time = 0.0f;
 
-void startGui(Graph* g, int paths[][64], int* path_lens, int num_travelers, pid_t* pids)
-{
-    InitWindow(SCREEN_W, SCREEN_H, "OS Graph Simulation - Traffic Flow");
-    SetTargetFPS(60);
+/* ── startGui ───────────────────────────────────────────────────────────── */
+void startGui(Graph *g, int paths[][64], int *path_lens, int num_travelers) {
+    static const Color traveler_colors[] = {
+        {0, 180, 255, 255}, {255, 80, 130, 255}, {255, 160, 30, 255},
+        {140, 80, 255, 255}, {0, 220, 160, 255}, {255, 220, 50, 255},
+        {60, 220, 80, 255},  {255, 120, 60, 255}, {120, 200, 255, 255}
+    };
 
-    RenderCtx* ctx = InitRenderer(g, num_travelers);
-    for (int i = 0; i < num_travelers; i++)
-    {
-        memcpy(ctx->cars[i].path, paths[i], path_lens[i] * sizeof(int));
-        ctx->cars[i].path_len = path_lens[i];
+    Vector2 positions[MAX_NODES];
+    float cx = GRAPH_W * 0.5f, cy = WIN_H * 0.5f, rad = 220.0f;
+    for (int i = 0; i < g->num_nodes; i++) {
+        float a = (float)i / g->num_nodes * 2.0f * PI - PI * 0.5f;
+        positions[i] = (Vector2){cx + rad * cosf(a), cy + rad * sinf(a)};
     }
 
-    bool signaled[num_travelers];
-    for (int i = 0; i < num_travelers; i++) signaled[i] = false;
+    InitWindow(GUI_WIN_W, GUI_WIN_H, "OS Graph Simulation"); SetTargetFPS(60);
+    RenderCtx *ctx = InitRenderer(g->num_nodes, positions, num_travelers);
 
-    while (RenderFrame(ctx, g, GetFrameTime()))
-    {
-        for (int i = 0; i < num_travelers; i++)
-        {
-            if (!signaled[i] && ctx->cars[i].state == CAR_ARRIVED)
-            {
-                kill(pids[i], SIGTERM);
-                signaled[i] = true;
-            }
-        }
+    for (int i = 0; i < num_travelers; i++) {
+        Car *c      = &ctx->cars[i]; c->id       = i; c->color    = traveler_colors[i % 9];
+        c->path     = malloc(path_lens[i] * sizeof(int)); memcpy(c->path, paths[i], path_lens[i] * sizeof(int));
+        c->path_len = path_lens[i]; c->path_idx = 0; c->t        = 0.0f; c->speed    = 0.55f;
+        c->state    = (path_lens[i] > 1) ? CAR_MOVING : CAR_ARRIVED;
+        if (path_lens[i] > 0) { c->x = positions[c->path[0]].x; c->y = positions[c->path[0]].y; }
+
+        int off = 0;
+        for (int j = 0; j < path_lens[i] && off < (int)sizeof(c->path_str) - 8; j++)
+            off += snprintf(c->path_str + off, sizeof(c->path_str) - off, j ? "->%d" : "%d", paths[i][j]);
     }
 
-    FreeRenderer(ctx);
-    CloseWindow();
+    while (!WindowShouldClose()) { BeginDrawing(); RenderFrame(ctx, g, GetFrameTime()); EndDrawing(); }
+
+    for (int i = 0; i < num_travelers; i++) free(ctx->cars[i].path);
+    FreeRenderer(ctx); CloseWindow();
 }
 
 void DrawWeightBadge(Vector2 mid, int w, bool on_path)
@@ -248,21 +257,24 @@ void DrawBackground(void)
 static void DrawNodeTile(RenderCtx* ctx, int idx)
 {
     Vector2 p = ctx->positions[idx];
-    float half = NODE_SZ * 0.5f;
-
+    float size = NODE_SZ * 1.2f;
     float pulse = (sinf(s_time * 2.2f + idx * 0.85f) + 1.0f) * 0.5f;
     Color ring = C_NODE_RING;
-    ring.a = (unsigned char)(70 + 85 * pulse);
-    DrawCircleLines((int)p.x, (int)p.y, half * 1.15f + pulse * 3.2f, ring);
+    ring.a = (unsigned char)(50 + 70 * pulse);
+    DrawCircleLines((int)p.x, (int)p.y, (size * 0.5f) + 4.0f + pulse * 3.0f, ring);
 
-    DrawCircle((int)p.x, (int)p.y, half, C_BTN_IDLE);
-    DrawCircleLines((int)p.x, (int)p.y, half, C_NODE_RING);
-    DrawCircle((int)p.x, (int)p.y, half * 0.45f, (Color){0, 175, 255, 140});
+    Texture2D currentTex = ctx->stationTextures[idx % NUM_STATION_TYPES];
+
+    Rectangle sourceRec = { 0.0f, 0.0f, (float)currentTex.width, (float)currentTex.height };
+    Rectangle destRec = { p.x, p.y, size, size };
+    Vector2 origin = { size * 0.5f, size * 0.5f };
+
+    DrawTexturePro(currentTex, sourceRec, destRec, origin, 0.0f, WHITE);
 
     char id[16];
     snprintf(id, sizeof id, "%d", idx);
     int tw = MeasureText(id, 11);
-    DrawText(id, (int)(p.x - tw * 0.5f), (int)(p.y + half + 4), 11, C_NODE_ID);
+    DrawText(id, (int)(p.x - tw * 0.5f), (int)(p.y + (size * 0.5f) + 5), 11, C_NODE_ID);
 }
 
 void DrawNodes(RenderCtx* ctx)
@@ -343,7 +355,7 @@ void UpdateCar(Car* car, RenderCtx* ctx, float dt)
         car->y = ctx->positions[ni].y;
         car->t = 1.0f;
         car->state = CAR_NODE_WAIT;
-        car->wait_timer = 0.22f;
+        car->timer = 0.22f;
     }
     else
     {
@@ -439,6 +451,16 @@ RenderCtx* InitRenderer(int num_nodes, Vector2* positions, int num_cars)
     ctx->positions = malloc(num_nodes * sizeof(Vector2));
     ctx->cars = calloc(num_cars, sizeof(Car));
     for (int i = 0; i < num_nodes; i++) ctx->positions[i] = positions[i];
+
+    char filePath[32];
+    for (int i = 0; i < NUM_STATION_TYPES; i++)
+    {
+        snprintf(filePath, sizeof(filePath), "data/station%d.png", i);
+        ctx->stationTextures[i] = LoadTexture(filePath);
+
+        GenTextureMipmaps(&ctx->stationTextures[i]);
+        SetTextureFilter(ctx->stationTextures[i], TEXTURE_FILTER_TRILINEAR);
+    }
     return ctx;
 }
 
@@ -629,6 +651,9 @@ void FreeRenderer(RenderCtx* ctx)
 {
     if (ctx)
     {
+        for (int i = 0; i < NUM_STATION_TYPES; i++) {
+            UnloadTexture(ctx->stationTextures[i]);
+        }
         free(ctx->positions);
         free(ctx->cars);
         free(ctx);
