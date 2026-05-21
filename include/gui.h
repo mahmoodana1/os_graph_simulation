@@ -67,5 +67,6 @@ typedef struct {
 RenderCtx *InitRenderer(int num_nodes, Vector2 *positions, int num_cars);
 bool RenderFrame(RenderCtx *ctx, Graph *g, float dt);
 void FreeRenderer(RenderCtx *ctx);
+void DrawArrowAt(Vector2 pos, float ca, float sa, float sz, Color col);
 
 #endif

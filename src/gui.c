@@ -185,19 +185,12 @@ static void DrawRiverBranch(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p1,
     }
 }
 
-static void DrawRoadArrow(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p3,
-                          Color color)
-{
-    static const float ts[2] = {0.25f, 0.75f};
-    for (int i = 0; i < 2; i++)
-    {
-        Vector2 tang = GetBezierTangent(p0, c1, c2, p3, ts[i]);
-        if (Vector2Length(tang) < 1.0f)
-            continue;
-        Vector2 pos = GetBezierPoint(p0, c1, c2, p3, ts[i]);
-        float angle = atan2f(tang.y, tang.x) * (180.0f / PI);
-        DrawPoly(pos, 3, 8.0f, angle, color);
-    }
+void DrawArrowAt(Vector2 pos, float ca, float sa, float sz, Color col) {
+    float cp = -sa, sp = ca;
+    Vector2 tip = {pos.x + ca*sz*1.5f,               pos.y + sa*sz*1.5f};
+    Vector2 bl  = {pos.x - ca*sz*0.6f + cp*sz*0.85f, pos.y - sa*sz*0.6f + sp*sz*0.85f};
+    Vector2 br  = {pos.x - ca*sz*0.6f - cp*sz*0.85f, pos.y - sa*sz*0.6f - sp*sz*0.85f};
+    DrawTriangle(tip, bl, br, col);
 }
 
 static void DrawNodeTile(RenderCtx* ctx, int idx)
