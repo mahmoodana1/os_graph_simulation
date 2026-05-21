@@ -54,12 +54,13 @@ typedef struct {
 
 /* --- Main Renderer Context --- */
 typedef struct {
-    Vector2 positions[64];
-    Color accents[64];
+    Vector2 *positions;
     int node_count;
     Car *cars;
     int numCars;
-    bool playing;
+    bool paused;
+    bool running;
+    bool all_arrived;
 } RenderCtx;
 
 /* --- Public API --- */
