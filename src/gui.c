@@ -185,12 +185,52 @@ static void DrawRiverBranch(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p1,
     }
 }
 
+/* ── Bezier helpers ──────────────────────────────────────────────────── */
+static inline Vector2 BezPt(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p3, float t) {
+    float u = 1.0f - t;
+    return (Vector2){
+        u*u*u*p0.x + 3.0f*u*u*t*c1.x + 3.0f*u*t*t*c2.x + t*t*t*p3.x,
+        u*u*u*p0.y + 3.0f*u*u*t*c1.y + 3.0f*u*t*t*c2.y + t*t*t*p3.y
+    };
+}
+
+static inline Vector2 BezTan(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p3, float t) {
+    float u = 1.0f - t;
+    return (Vector2){
+        3.0f*(u*u*(c1.x-p0.x) + 2.0f*u*t*(c2.x-c1.x) + t*t*(p3.x-c2.x)),
+        3.0f*(u*u*(c1.y-p0.y) + 2.0f*u*t*(c2.y-c1.y) + t*t*(p3.y-c2.y))
+    };
+}
+
+static void EdgeCP(Vector2 a, Vector2 b, Vector2 *c1, Vector2 *c2) {
+    float dx = b.x - a.x, dy = b.y - a.y;
+    float len = sqrtf(dx*dx + dy*dy);
+    if (len < 0.001f) { *c1 = a; *c2 = b; return; }
+    float px = -dy / len, py = dx / len;
+    float off = len * 0.18f;
+    *c1 = (Vector2){a.x + dx*0.33f + px*off, a.y + dy*0.33f + py*off};
+    *c2 = (Vector2){a.x + dx*0.67f + px*off, a.y + dy*0.67f + py*off};
+}
+
+
 void DrawArrowAt(Vector2 pos, float ca, float sa, float sz, Color col) {
     float cp = -sa, sp = ca;
     Vector2 tip = {pos.x + ca*sz*1.5f,               pos.y + sa*sz*1.5f};
     Vector2 bl  = {pos.x - ca*sz*0.6f + cp*sz*0.85f, pos.y - sa*sz*0.6f + sp*sz*0.85f};
     Vector2 br  = {pos.x - ca*sz*0.6f - cp*sz*0.85f, pos.y - sa*sz*0.6f - sp*sz*0.85f};
     DrawTriangle(tip, bl, br, col);
+}
+
+void DrawBackground(void) {
+    ClearBackground(C_BG);
+    for (int x = 0; x <= GRAPH_W; x += 40)
+        for (int y = 0; y <= WIN_H; y += 40)
+            DrawCircle(x, y, 1.1f, C_GRID);
+
+    DrawRectangleGradientH(0, 0, 90, WIN_H, C_VIGN, C_TRANS);
+    DrawRectangleGradientH(GRAPH_W - 90, 0, 90, WIN_H, C_TRANS, C_VIGN);
+    DrawRectangleGradientV(0, 0, GRAPH_W, 90, C_VIGN, C_TRANS);
+    DrawRectangleGradientV(0, WIN_H - 90, GRAPH_W, 90, C_TRANS, C_VIGN);
 }
 
 static void DrawNodeTile(RenderCtx* ctx, int idx)
