@@ -473,6 +473,22 @@ void DrawPanel(RenderCtx *ctx) {
     DrawText(info, PANEL_X + 14, y, 10, (Color){65, 98, 148, 190});
 }
 
+void DrawCarShape(float cx, float cy, float ca, float sa, float sz, Color col) {
+    float cp = -sa, sp = ca;
+    Vector2 front = {cx + ca*sz*1.65f,         cy + sa*sz*1.65f};
+    Vector2 bl    = {cx - ca*sz*0.75f + cp*sz*0.95f,  cy - sa*sz*0.75f + sp*sz*0.95f};
+    Vector2 br    = {cx - ca*sz*0.75f - cp*sz*0.95f,  cy - sa*sz*0.75f - sp*sz*0.95f};
+
+    DrawTriangle((Vector2){front.x+2.5f, front.y+2.5f}, (Vector2){bl.x+2.5f, bl.y+2.5f}, (Vector2){br.x+2.5f, br.y+2.5f}, C_CAR_SHADOW);
+    DrawTriangle(front, bl, br, col);
+
+    Vector2 hf = {cx + ca*sz*0.7f,        cy + sa*sz*0.7f};
+    Vector2 hl = {cx - ca*sz*0.1f + cp*sz*0.45f, cy - sa*sz*0.1f + sp*sz*0.45f};
+    Vector2 hr = {cx - ca*sz*0.1f - cp*sz*0.45f, cy - sa*sz*0.1f - sp*sz*0.45f};
+    DrawTriangle(hf, hl, hr, (Color){255, 255, 255, 55});
+}
+
+
 
 bool RenderFrame(RenderCtx* ctx, Graph* g, float dt)
 {
