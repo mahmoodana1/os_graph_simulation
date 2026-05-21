@@ -51,6 +51,8 @@
 #define C_FPS_TXT      CLITERAL(Color){ 60,  90, 140, 200}
 
 
+static float s_time = 0.0f;
+
 void startGui(Graph* g, int paths[][64], int* path_lens, int num_travelers, pid_t* pids)
 {
     InitWindow(SCREEN_W, SCREEN_H, "OS Graph Simulation - Traffic Flow");
@@ -235,46 +237,26 @@ void DrawBackground(void) {
 
 static void DrawNodeTile(RenderCtx* ctx, int idx)
 {
-    Vector2 p = ctx->positions[idx];
-    float yardSize = NODE_SIZE * 1.5f;
+    Vector2 p    = ctx->positions[idx];
+    float   half = NODE_SZ * 0.5f;
 
-    DrawRectangleRounded((Rectangle){
-                             p.x - yardSize / 2 + 4,
-                             p.y - yardSize / 2 + 4, yardSize,
-                             yardSize
-                         },
-                         0.3f, 10, MM_SHADOW);
-    DrawRectangleRounded(
-        (Rectangle){p.x - yardSize / 2, p.y - yardSize / 2, yardSize, yardSize},
-        0.3f, 10, MM_YARD);
+    float pulse = (sinf(s_time * 2.2f + idx * 0.85f) + 1.0f) * 0.5f;
+    Color ring  = C_NODE_RING;
+    ring.a      = (unsigned char)(70 + 85 * pulse);
+    DrawCircleLines((int)p.x, (int)p.y, half * 1.15f + pulse * 3.2f, ring);
 
-    Rectangle r = {
-        p.x - NODE_SIZE / 2, p.y - NODE_SIZE / 2, NODE_SIZE,
-        NODE_SIZE
-    };
-    DrawRectangleRounded(r, 0.25f, 8, MM_NODE_BG);
+    DrawCircle((int)p.x, (int)p.y, half, C_BTN_IDLE);
+    DrawCircleLines((int)p.x, (int)p.y, half, C_NODE_RING);
+    DrawCircle((int)p.x, (int)p.y, half * 0.45f, (Color){0, 175, 255, 140});
 
-    Color acc = ctx->accents[idx % 4];
-    DrawRectangleRounded((Rectangle){r.x, r.y, NODE_SIZE, NODE_SIZE * 0.5f},
-                         0.25f, 6, acc);
+    char id[16];
+    snprintf(id, sizeof id, "%d", idx);
+    int tw = MeasureText(id, 11);
+    DrawText(id, (int)(p.x - tw * 0.5f), (int)(p.y + half + 4), 11, C_NODE_ID);
+}
 
-    if (idx % 3 == 0)
-    {
-        DrawCircleV((Vector2){p.x - 5, p.y - 6}, 3.5f, WHITE);
-        DrawCircleV((Vector2){p.x + 5, p.y - 6}, 3.5f, WHITE);
-        DrawCircleV((Vector2){p.x - 5, p.y - 6}, 1.5f, BLACK);
-        DrawCircleV((Vector2){p.x + 5, p.y - 6}, 1.5f, BLACK);
-    }
-    else
-    {
-        DrawCircleV((Vector2){p.x, p.y - 6}, 4, WHITE);
-        DrawCircleV((Vector2){p.x, p.y - 6}, 2, BLACK);
-    }
-
-    char buf[8];
-    sprintf(buf, "%d", idx);
-    DrawText(buf, (int)(p.x - MeasureText(buf, 16) / 2), (int)(p.y + 6), 16,
-             MM_TEXT_DARK);
+void DrawNodes(RenderCtx *ctx) {
+    for (int i = 0; i < ctx->node_count; i++) DrawNodeTile(ctx, i);
 }
 
 void UpdateCar(Car* car, RenderCtx* ctx, Graph* g, float dt)
