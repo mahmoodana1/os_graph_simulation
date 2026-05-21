@@ -259,6 +259,42 @@ void DrawNodes(RenderCtx *ctx) {
     for (int i = 0; i < ctx->node_count; i++) DrawNodeTile(ctx, i);
 }
 
+
+/* ── Single edge ────────────────────────────────────────────────────────── */
+void DrawEdge(Vector2 a, Vector2 b, int weight) {
+    Vector2 c1, c2;
+    EdgeCP(a, b, &c1, &c2);
+
+    DrawSplineSegmentBezierCubic(a, c1, c2, b, 9.5f, C_ROAD_CASE);
+    DrawSplineSegmentBezierCubic(a, c1, c2, b, 5.5f, C_ROAD_MID);
+    DrawSplineSegmentBezierCubic(a, c1, c2, b, 1.8f, C_ROAD_CTR);
+
+    float phase = fmodf(s_time * 0.38f, 0.28f);
+    for (float t = 0.14f + phase; t < 0.91f; t += 0.28f) {
+        Vector2 pos = BezPt(a, c1, c2, b, t);
+        Vector2 tan = BezTan(a, c1, c2, b, t);
+        float   tl  = sqrtf(tan.x*tan.x + tan.y*tan.y);
+        if (tl < 0.001f) continue;
+        DrawArrowAt(pos, tan.x / tl, tan.y / tl, 5.5f, C_ARROW);
+    }
+
+    Vector2 mid = BezPt(a, c1, c2, b, 0.5f);
+    char    buf[8];
+    snprintf(buf, sizeof buf, "%d", weight);
+    int tw = MeasureText(buf, 10);
+    int bw = tw + 11, bh = 15;
+    Rectangle br = {mid.x - bw * 0.5f, mid.y - bh * 0.5f, (float)bw, (float)bh};
+    DrawRectangleRounded((Rectangle){br.x - 1, br.y - 1, br.width + 2, br.height + 2}, 0.5f, 5, C_BADGE_BD);
+    DrawRectangleRounded(br, 0.5f, 5, C_BADGE_BG);
+    DrawText(buf, (int)(mid.x - tw * 0.5f), (int)(mid.y - 5), 10, C_BADGE_TXT);
+}
+
+ void DrawEdges(RenderCtx *ctx, Graph *g) {
+    for (int i = 0; i < g->num_nodes; i++)
+        for (Node *e = g->adj[i]; e; e = e->next)
+            DrawEdge(ctx->positions[i], ctx->positions[e->id], e->weight);
+}
+
 void UpdateCar(Car* car, RenderCtx* ctx, Graph* g, float dt)
 {
     if (car->path_len <= 0)
