@@ -16,6 +16,15 @@
 
 
 #define NUM_STATION_TYPES 4
+#define MAX_TOASTS        8
+
+/* --- Toast Notification --- */
+typedef struct {
+    char  text[32];   /* "Traveler X" */
+    Color color;
+    float timer;      /* counts down from TOAST_LIFETIME to 0 */
+    bool  active;
+} Toast;
 
 /* --- High-level GUI Entry Point --- */
 /* paths[i] is the node-ID array for traveler i, path_lens[i] is its length */
@@ -42,6 +51,7 @@ typedef struct {
     Color color;
     char      path_str[128];
     float     last_ca, last_sa; /* last heading, held across non-moving states */
+    bool      notified;        /* true once the arrival toast has fired */
 } Car;
 
 /* --- Main Renderer Context --- */
@@ -54,6 +64,7 @@ typedef struct {
     bool running;
     bool all_arrived;
     Texture2D stationTextures[NUM_STATION_TYPES];
+    Toast     toasts[MAX_TOASTS];
 } RenderCtx;
 
 /* --- Public API --- */

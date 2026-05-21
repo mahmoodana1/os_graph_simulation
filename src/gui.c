@@ -55,7 +55,80 @@
 #define MM_RIVER        CLITERAL(Color){ 160, 220, 230, 255 }
 #define MM_RIVER_LABEL  CLITERAL(Color){ 140, 190, 200, 160 }
 
+#define TOAST_LIFETIME  3.0f
+#define TOAST_FADE_IN   0.25f
+#define TOAST_FADE_OUT  0.50f
+#define TOAST_W        238.0f
+#define TOAST_H         50.0f
+#define TOAST_GAP        8.0f
+
 static float s_time = 0.0f;
+
+/* ── Toast helpers ──────────────────────────────────────────────────────── */
+static void FireToast(RenderCtx *ctx, const char *label, Color color)
+{
+    int target = -1, oldest = 0;
+    for (int i = 0; i < MAX_TOASTS; i++) {
+        if (!ctx->toasts[i].active) { target = i; break; }
+        if (ctx->toasts[i].timer < ctx->toasts[oldest].timer) oldest = i;
+    }
+    if (target == -1) target = oldest;
+    strncpy(ctx->toasts[target].text, label, 31);
+    ctx->toasts[target].text[31] = '\0';
+    ctx->toasts[target].color  = color;
+    ctx->toasts[target].timer  = TOAST_LIFETIME;
+    ctx->toasts[target].active = true;
+}
+
+static void UpdateToasts(RenderCtx *ctx, float dt)
+{
+    for (int i = 0; i < MAX_TOASTS; i++) {
+        if (!ctx->toasts[i].active) continue;
+        ctx->toasts[i].timer -= dt;
+        if (ctx->toasts[i].timer <= 0.0f) ctx->toasts[i].active = false;
+    }
+}
+
+static void DrawToasts(RenderCtx *ctx)
+{
+    int slot = 0;
+    for (int i = 0; i < MAX_TOASTS; i++) {
+        if (!ctx->toasts[i].active) continue;
+        Toast *t = &ctx->toasts[i];
+
+        float elapsed = TOAST_LIFETIME - t->timer;
+        float raw = 1.0f;
+        if      (elapsed < TOAST_FADE_IN)  raw = elapsed / TOAST_FADE_IN;
+        else if (t->timer < TOAST_FADE_OUT) raw = t->timer / TOAST_FADE_OUT;
+        unsigned char a = (unsigned char)(raw * 255.0f);
+
+        float tx = (float)GRAPH_W - TOAST_W - 14.0f;
+        float ty = 14.0f + (float)slot * (TOAST_H + TOAST_GAP);
+        slot++;
+
+        /* drop shadow */
+        DrawRectangleRounded((Rectangle){tx + 3, ty + 3, TOAST_W, TOAST_H},
+                             0.28f, 8, (Color){0, 0, 0, (unsigned char)(80 * raw)});
+        /* colored border glow */
+        Color bord = t->color; bord.a = a;
+        DrawRectangleRounded((Rectangle){tx - 1, ty - 1, TOAST_W + 2, TOAST_H + 2},
+                             0.28f, 8, bord);
+        /* dark card background */
+        DrawRectangleRounded((Rectangle){tx, ty, TOAST_W, TOAST_H},
+                             0.28f, 8, (Color){6, 10, 22, (unsigned char)(230 * raw)});
+        /* left accent bar in traveler color */
+        Color accent = t->color; accent.a = a;
+        DrawRectangle((int)tx, (int)(ty + 6), 4, (int)(TOAST_H - 12), accent);
+
+        /* traveler name — line 1 */
+        Color name_col = t->color; name_col.a = a;
+        DrawText(t->text, (int)(tx + 14), (int)(ty + 9), 14, name_col);
+
+        /* "Arrived!" subtitle — line 2 */
+        DrawText("Arrived!", (int)(tx + 14), (int)(ty + 28), 11,
+                 (Color){210, 230, 255, a});
+    }
+}
 
 /* ── startGui ───────────────────────────────────────────────────────────── */
 void startGui(Graph *g, int paths[][64], int *path_lens, int num_travelers) {
@@ -80,6 +153,7 @@ void startGui(Graph *g, int paths[][64], int *path_lens, int num_travelers) {
         c->path     = malloc(path_lens[i] * sizeof(int)); memcpy(c->path, paths[i], path_lens[i] * sizeof(int));
         c->path_len = path_lens[i]; c->path_idx = 0; c->t        = 0.0f; c->speed    = 0.55f;
         c->state    = (path_lens[i] > 1) ? CAR_MOVING : CAR_ARRIVED;
+        c->notified = (c->state == CAR_ARRIVED); /* trivial path — skip toast */
         if (path_lens[i] > 0) { c->x = positions[c->path[0]].x; c->y = positions[c->path[0]].y; }
 
         int off = 0;
@@ -307,6 +381,7 @@ void DrawEdge(Vector2 a, Vector2 b, int weight)
         Vector2 arrowTip = { b.x - dx * offset, b.y - dy * offset };
 
 
+
         float arrowSize = 14.0f;
         Vector2 wingLeft  = { arrowTip.x - (dx - dy) * arrowSize * 0.5f, arrowTip.y - (dy + dx) * arrowSize * 0.5f };
         Vector2 wingRight = { arrowTip.x - (dx + dy) * arrowSize * 0.5f, arrowTip.y - (dy - dx) * arrowSize * 0.5f };
@@ -391,17 +466,16 @@ void UpdateCars(RenderCtx* ctx, float dt)
     for (int i = 0; i < ctx->numCars; i++)
     {
         UpdateCar(&ctx->cars[i], ctx, dt);
-        if (ctx->cars[i].state != CAR_ARRIVED)
-            all = false;
-    }
-    if (all)
-    {
-        if (all)
-        {
-            ctx->all_arrived = true;
-            ctx->running = false;
+        Car *c = &ctx->cars[i];
+        if (c->state == CAR_ARRIVED && !c->notified) {
+            c->notified = true;
+            char label[32];
+            snprintf(label, sizeof label, "Traveler %d", c->id + 1);
+            FireToast(ctx, label, c->color);
         }
+        if (c->state != CAR_ARRIVED) all = false;
     }
+    if (all) { ctx->all_arrived = true; ctx->running = false; }
 }
 
 void DrawSingleCar(Car *car, RenderCtx *ctx) {
@@ -614,6 +688,7 @@ void DrawPanel(RenderCtx* ctx)
             c->path_idx = 0;
             c->t = 0.0f;
             c->timer = 0.0f;
+            c->notified = false;
             c->state = (c->path && c->path_len > 1) ? CAR_MOVING : CAR_ARRIVED;
             if (c->path && c->path_len > 0)
             {
@@ -621,6 +696,7 @@ void DrawPanel(RenderCtx* ctx)
                 c->y = ctx->positions[c->path[0]].y;
             }
         }
+        memset(ctx->toasts, 0, sizeof(ctx->toasts));
         ctx->all_arrived = false;
         ctx->running = false;
         ctx->paused = false;
@@ -653,12 +729,15 @@ void DrawCarShape(float cx, float cy, float ca, float sa, float sz, Color col)
 
 
 void RenderFrame(RenderCtx *ctx, Graph *g, float dt) {
-    s_time += dt; UpdateCars(ctx, dt);
+    s_time += dt;
+    UpdateCars(ctx, dt);
+    UpdateToasts(ctx, dt);
     DrawBackground(); DrawEdges(ctx, g); DrawNodes(ctx);
     for (int i = 0; i < ctx->numCars; i++) DrawSingleCar(&ctx->cars[i], ctx);
     DrawPanel(ctx);
     if (!ctx->running && !ctx->paused && !ctx->all_arrived) DrawPlayOverlay(ctx);
     if (ctx->all_arrived) DrawArrivedBanner();
+    DrawToasts(ctx);
     DrawText(TextFormat("FPS %d", GetFPS()), GRAPH_W - 58, WIN_H - 18, 10, C_FPS_TXT);
 }
 
