@@ -188,42 +188,52 @@ static void DrawRiverBranch(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p1,
 }
 
 /* ── Bezier helpers ──────────────────────────────────────────────────── */
-static inline Vector2 BezPt(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p3, float t) {
+static inline Vector2 BezPt(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p3, float t)
+{
     float u = 1.0f - t;
     return (Vector2){
-        u*u*u*p0.x + 3.0f*u*u*t*c1.x + 3.0f*u*t*t*c2.x + t*t*t*p3.x,
-        u*u*u*p0.y + 3.0f*u*u*t*c1.y + 3.0f*u*t*t*c2.y + t*t*t*p3.y
+        u * u * u * p0.x + 3.0f * u * u * t * c1.x + 3.0f * u * t * t * c2.x + t * t * t * p3.x,
+        u * u * u * p0.y + 3.0f * u * u * t * c1.y + 3.0f * u * t * t * c2.y + t * t * t * p3.y
     };
 }
 
-static inline Vector2 BezTan(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p3, float t) {
+static inline Vector2 BezTan(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p3, float t)
+{
     float u = 1.0f - t;
     return (Vector2){
-        3.0f*(u*u*(c1.x-p0.x) + 2.0f*u*t*(c2.x-c1.x) + t*t*(p3.x-c2.x)),
-        3.0f*(u*u*(c1.y-p0.y) + 2.0f*u*t*(c2.y-c1.y) + t*t*(p3.y-c2.y))
+        3.0f * (u * u * (c1.x - p0.x) + 2.0f * u * t * (c2.x - c1.x) + t * t * (p3.x - c2.x)),
+        3.0f * (u * u * (c1.y - p0.y) + 2.0f * u * t * (c2.y - c1.y) + t * t * (p3.y - c2.y))
     };
 }
 
-static void EdgeCP(Vector2 a, Vector2 b, Vector2 *c1, Vector2 *c2) {
+static void EdgeCP(Vector2 a, Vector2 b, Vector2* c1, Vector2* c2)
+{
     float dx = b.x - a.x, dy = b.y - a.y;
-    float len = sqrtf(dx*dx + dy*dy);
-    if (len < 0.001f) { *c1 = a; *c2 = b; return; }
+    float len = sqrtf(dx * dx + dy * dy);
+    if (len < 0.001f)
+    {
+        *c1 = a;
+        *c2 = b;
+        return;
+    }
     float px = -dy / len, py = dx / len;
     float off = len * 0.18f;
-    *c1 = (Vector2){a.x + dx*0.33f + px*off, a.y + dy*0.33f + py*off};
-    *c2 = (Vector2){a.x + dx*0.67f + px*off, a.y + dy*0.67f + py*off};
+    *c1 = (Vector2){a.x + dx * 0.33f + px * off, a.y + dy * 0.33f + py * off};
+    *c2 = (Vector2){a.x + dx * 0.67f + px * off, a.y + dy * 0.67f + py * off};
 }
 
 
-void DrawArrowAt(Vector2 pos, float ca, float sa, float sz, Color col) {
+void DrawArrowAt(Vector2 pos, float ca, float sa, float sz, Color col)
+{
     float cp = -sa, sp = ca;
-    Vector2 tip = {pos.x + ca*sz*1.5f,               pos.y + sa*sz*1.5f};
-    Vector2 bl  = {pos.x - ca*sz*0.6f + cp*sz*0.85f, pos.y - sa*sz*0.6f + sp*sz*0.85f};
-    Vector2 br  = {pos.x - ca*sz*0.6f - cp*sz*0.85f, pos.y - sa*sz*0.6f - sp*sz*0.85f};
+    Vector2 tip = {pos.x + ca * sz * 1.5f, pos.y + sa * sz * 1.5f};
+    Vector2 bl = {pos.x - ca * sz * 0.6f + cp * sz * 0.85f, pos.y - sa * sz * 0.6f + sp * sz * 0.85f};
+    Vector2 br = {pos.x - ca * sz * 0.6f - cp * sz * 0.85f, pos.y - sa * sz * 0.6f - sp * sz * 0.85f};
     DrawTriangle(tip, bl, br, col);
 }
 
-void DrawBackground(void) {
+void DrawBackground(void)
+{
     ClearBackground(C_BG);
     for (int x = 0; x <= GRAPH_W; x += 40)
         for (int y = 0; y <= WIN_H; y += 40)
@@ -237,12 +247,12 @@ void DrawBackground(void) {
 
 static void DrawNodeTile(RenderCtx* ctx, int idx)
 {
-    Vector2 p    = ctx->positions[idx];
-    float   half = NODE_SZ * 0.5f;
+    Vector2 p = ctx->positions[idx];
+    float half = NODE_SZ * 0.5f;
 
     float pulse = (sinf(s_time * 2.2f + idx * 0.85f) + 1.0f) * 0.5f;
-    Color ring  = C_NODE_RING;
-    ring.a      = (unsigned char)(70 + 85 * pulse);
+    Color ring = C_NODE_RING;
+    ring.a = (unsigned char)(70 + 85 * pulse);
     DrawCircleLines((int)p.x, (int)p.y, half * 1.15f + pulse * 3.2f, ring);
 
     DrawCircle((int)p.x, (int)p.y, half, C_BTN_IDLE);
@@ -255,13 +265,15 @@ static void DrawNodeTile(RenderCtx* ctx, int idx)
     DrawText(id, (int)(p.x - tw * 0.5f), (int)(p.y + half + 4), 11, C_NODE_ID);
 }
 
-void DrawNodes(RenderCtx *ctx) {
+void DrawNodes(RenderCtx* ctx)
+{
     for (int i = 0; i < ctx->node_count; i++) DrawNodeTile(ctx, i);
 }
 
 
 /* ── Single edge ────────────────────────────────────────────────────────── */
-void DrawEdge(Vector2 a, Vector2 b, int weight) {
+void DrawEdge(Vector2 a, Vector2 b, int weight)
+{
     Vector2 c1, c2;
     EdgeCP(a, b, &c1, &c2);
 
@@ -270,16 +282,17 @@ void DrawEdge(Vector2 a, Vector2 b, int weight) {
     DrawSplineSegmentBezierCubic(a, c1, c2, b, 1.8f, C_ROAD_CTR);
 
     float phase = fmodf(s_time * 0.38f, 0.28f);
-    for (float t = 0.14f + phase; t < 0.91f; t += 0.28f) {
+    for (float t = 0.14f + phase; t < 0.91f; t += 0.28f)
+    {
         Vector2 pos = BezPt(a, c1, c2, b, t);
         Vector2 tan = BezTan(a, c1, c2, b, t);
-        float   tl  = sqrtf(tan.x*tan.x + tan.y*tan.y);
+        float tl = sqrtf(tan.x * tan.x + tan.y * tan.y);
         if (tl < 0.001f) continue;
         DrawArrowAt(pos, tan.x / tl, tan.y / tl, 5.5f, C_ARROW);
     }
 
     Vector2 mid = BezPt(a, c1, c2, b, 0.5f);
-    char    buf[8];
+    char buf[8];
     snprintf(buf, sizeof buf, "%d", weight);
     int tw = MeasureText(buf, 10);
     int bw = tw + 11, bh = 15;
@@ -289,9 +302,10 @@ void DrawEdge(Vector2 a, Vector2 b, int weight) {
     DrawText(buf, (int)(mid.x - tw * 0.5f), (int)(mid.y - 5), 10, C_BADGE_TXT);
 }
 
- void DrawEdges(RenderCtx *ctx, Graph *g) {
+void DrawEdges(RenderCtx* ctx, Graph* g)
+{
     for (int i = 0; i < g->num_nodes; i++)
-        for (Node *e = g->adj[i]; e; e = e->next)
+        for (Node* e = g->adj[i]; e; e = e->next)
             DrawEdge(ctx->positions[i], ctx->positions[e->id], e->weight);
 }
 
@@ -299,30 +313,67 @@ void UpdateCar(Car* car, RenderCtx* ctx, Graph* g, float dt)
 {
     if (car->state == CAR_ARRIVED || car->state == CAR_IDLE || !car->path) return;
 
-    if (car->state == CAR_NODE_WAIT) {
+    if (car->state == CAR_NODE_WAIT)
+    {
         car->timer -= dt;
-        if (car->timer <= 0.0f) {
+        if (car->timer <= 0.0f)
+        {
             car->path_idx++;
-            if (car->path_idx >= car->path_len - 1) {
+            if (car->path_idx >= car->path_len - 1)
+            {
                 car->state = CAR_ARRIVED;
-                int last   = car->path[car->path_len - 1];
-                car->x     = ctx->positions[last].x; car->y     = ctx->positions[last].y;
-            } else { car->state = CAR_MOVING; car->t     = 0.0f; }
+                int last = car->path[car->path_len - 1];
+                car->x = ctx->positions[last].x;
+                car->y = ctx->positions[last].y;
+            }
+            else
+            {
+                car->state = CAR_MOVING;
+                car->t = 0.0f;
+            }
         }
         return;
     }
 
     car->t += car->speed * dt;
-    if (car->t >= 1.0f) {
-        int ni    = car->path[car->path_idx + 1];
-        car->x    = ctx->positions[ni].x; car->y    = ctx->positions[ni].y;
-        car->t    = 1.0f; car->state      = CAR_NODE_WAIT; car->wait_timer = 0.22f;
-    } else {
-        int     from = car->path[car->path_idx];
-        int     to   = car->path[car->path_idx + 1];
-        Vector2 c1, c2; EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
+    if (car->t >= 1.0f)
+    {
+        int ni = car->path[car->path_idx + 1];
+        car->x = ctx->positions[ni].x;
+        car->y = ctx->positions[ni].y;
+        car->t = 1.0f;
+        car->state = CAR_NODE_WAIT;
+        car->wait_timer = 0.22f;
+    }
+    else
+    {
+        int from = car->path[car->path_idx];
+        int to = car->path[car->path_idx + 1];
+        Vector2 c1, c2;
+        EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
         Vector2 pos = BezPt(ctx->positions[from], c1, c2, ctx->positions[to], car->t);
-        car->x = pos.x; car->y = pos.y;
+        car->x = pos.x;
+        car->y = pos.y;
+    }
+}
+
+void UpdateCars(RenderCtx* ctx, float dt)
+{
+    if (ctx->paused || !ctx->running) return;
+    bool all = true;
+    for (int i = 0; i < ctx->numCars; i++)
+    {
+        UpdateCar(&ctx->cars[i], ctx, dt);
+        if (ctx->cars[i].state != CAR_ARRIVED)
+            all = false;
+    }
+    if (all)
+    {
+        if (all)
+        {
+            ctx->all_arrived = true;
+            ctx->running = false;
+        }
     }
 }
 
@@ -336,18 +387,22 @@ RenderCtx* InitRenderer(int num_nodes, Vector2* positions, int num_cars)
     for (int i = 0; i < num_nodes; i++) ctx->positions[i] = positions[i];
     return ctx;
 }
-static bool DrawButton(Rectangle r, const char *label, Color bg, Color hov) {
-    Vector2 mp      = GetMousePosition();
-    bool    hovered = CheckCollisionPointRec(mp, r);
-    bool    clicked = hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
-    Color   fill    = hovered ? hov : bg;
+
+static bool DrawButton(Rectangle r, const char* label, Color bg, Color hov)
+{
+    Vector2 mp = GetMousePosition();
+    bool hovered = CheckCollisionPointRec(mp, r);
+    bool clicked = hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    Color fill = hovered ? hov : bg;
     DrawRectangleRounded((Rectangle){r.x - 1, r.y - 1, r.width + 2, r.height + 2}, 0.35f, 8, C_BTN_BORD);
     DrawRectangleRounded(r, 0.35f, 8, fill);
     int tw = MeasureText(label, 14);
     DrawText(label, (int)(r.x + r.width * 0.5f - tw * 0.5f), (int)(r.y + r.height * 0.5f - 7), 14, C_BTN_TXT);
     return clicked;
 }
-void DrawPanel(RenderCtx *ctx) {
+
+void DrawPanel(RenderCtx* ctx)
+{
     DrawRectangle(PANEL_X, 0, PANEL_W, WIN_H, C_PANEL_BG);
     DrawRectangle(PANEL_X, 0, 1, WIN_H, C_PANEL_SEP);
     int y = 18;
@@ -359,7 +414,7 @@ void DrawPanel(RenderCtx *ctx) {
     DrawRectangle(PANEL_X + 12, y, PANEL_W - 24, 1, C_PANEL_SEP);
     y += 10;
 
-    const char *status = ctx->all_arrived ? "COMPLETE" : ctx->paused ? "PAUSED" : ctx->running ? "RUNNING" : "READY";
+    const char* status = ctx->all_arrived ? "COMPLETE" : ctx->paused ? "PAUSED" : ctx->running ? "RUNNING" : "READY";
     Color sc = ctx->all_arrived ? C_SUCCESS_TXT : ctx->paused ? (Color){255, 195, 50, 255} : C_PANEL_TITLE;
 
     DrawText("STATUS", PANEL_X + 16, y, 10, (Color){75, 115, 165, 200});
@@ -372,33 +427,59 @@ void DrawPanel(RenderCtx *ctx) {
     DrawText("TRAVELERS", PANEL_X + 16, y, 11, C_PANEL_TXT);
     y += 16;
 
-    for (int i = 0; i < ctx->numCars; i++) {
-        Car   *c   = &ctx->cars[i];
-        int    ry  = y + i * 56;
-        float  bx  = (float)(PANEL_X + 14);
-        float  bw  = (float)(PANEL_W - 28);
+    for (int i = 0; i < ctx->numCars; i++)
+    {
+        Car* c = &ctx->cars[i];
+        int ry = y + i * 56;
+        float bx = (float)(PANEL_X + 14);
+        float bw = (float)(PANEL_W - 28);
 
         DrawRectangleRounded((Rectangle){bx, (float)ry, 11, 11}, 0.4f, 4, c->color);
-        char lbl[24]; snprintf(lbl, sizeof lbl, "Traveler %d", c->id + 1);
+        char lbl[24];
+        snprintf(lbl, sizeof lbl, "Traveler %d", c->id + 1);
         DrawText(lbl, PANEL_X + 30, ry, 12, C_PANEL_TXT);
 
-        const char *st = c->state == CAR_ARRIVED ? "ARRIVED" : c->state == CAR_MOVING ? "MOVING" : c->state == CAR_NODE_WAIT ? "WAITING" : "IDLE";
-        Color stc = c->state == CAR_ARRIVED ? C_SUCCESS_TXT : c->state == CAR_MOVING ? C_PANEL_TITLE : (Color){180, 140, 60, 220};
+        const char* st = c->state == CAR_ARRIVED
+                             ? "ARRIVED"
+                             : c->state == CAR_MOVING
+                             ? "MOVING"
+                             : c->state == CAR_NODE_WAIT
+                             ? "WAITING"
+                             : "IDLE";
+        Color stc = c->state == CAR_ARRIVED
+                        ? C_SUCCESS_TXT
+                        : c->state == CAR_MOVING
+                        ? C_PANEL_TITLE
+                        : (Color){180, 140, 60, 220};
         int sw = MeasureText(st, 10);
         DrawText(st, PANEL_X + PANEL_W - 14 - sw, ry, 10, stc);
 
         float prog = 0.0f;
-        if (c->path_len > 1) {
+        if (c->path_len > 1)
+        {
             prog = ((float)c->path_idx + c->t) / (float)(c->path_len - 1);
             if (prog > 1.0f) prog = 1.0f;
-        } else if (c->state == CAR_ARRIVED) { prog = 1.0f; }
+        }
+        else if (c->state == CAR_ARRIVED) { prog = 1.0f; }
 
         DrawRectangle((int)bx, ry + 16, (int)bw, 4, (Color){18, 30, 58, 255});
         DrawRectangle((int)bx, ry + 16, (int)(bw * prog), 4, c->color);
 
-        char ps[52]; int plen = (int)strlen(c->path_str);
-        if (plen > 46) { strncpy(ps, c->path_str, 43); ps[43] = '.'; ps[44] = '.'; ps[45] = '.'; ps[46] = '\0'; }
-        else { strncpy(ps, c->path_str, sizeof ps - 1); ps[sizeof ps - 1] = '\0'; }
+        char ps[52];
+        int plen = (int)strlen(c->path_str);
+        if (plen > 46)
+        {
+            strncpy(ps, c->path_str, 43);
+            ps[43] = '.';
+            ps[44] = '.';
+            ps[45] = '.';
+            ps[46] = '\0';
+        }
+        else
+        {
+            strncpy(ps, c->path_str, sizeof ps - 1);
+            ps[sizeof ps - 1] = '\0';
+        }
         DrawText(ps, (int)bx, ry + 24, 9, (Color){90, 130, 175, 200});
 
         DrawRectangle(PANEL_X + 12, ry + 40, PANEL_W - 24, 1, (Color){18, 30, 55, 180});
@@ -411,53 +492,73 @@ void DrawPanel(RenderCtx *ctx) {
     float p_bx = (float)(PANEL_X + BTN_MX);
     float p_bw = (float)(PANEL_W - BTN_MX * 2);
 
-    const char *play_lbl = (!ctx->running && !ctx->paused) ? "PLAY" : ctx->running ? "PAUSE" : "RESUME";
+    const char* play_lbl = (!ctx->running && !ctx->paused) ? "PLAY" : ctx->running ? "PAUSE" : "RESUME";
     Color play_bg = (!ctx->running && !ctx->paused) ? C_BTN_PLAY : ctx->running ? C_BTN_IDLE : C_BTN_PLAY;
     Color play_hov = (!ctx->running && !ctx->paused) ? C_BTN_PLAY_HOV : ctx->running ? C_BTN_HOVER : C_BTN_PLAY_HOV;
 
-    if (DrawButton((Rectangle){p_bx, (float)y, p_bw, BTN_H}, play_lbl, play_bg, play_hov)) {
-        if (!ctx->all_arrived) {
+    if (DrawButton((Rectangle){p_bx, (float)y, p_bw, BTN_H}, play_lbl, play_bg, play_hov))
+    {
+        if (!ctx->all_arrived)
+        {
             if (!ctx->running && !ctx->paused) ctx->running = true;
-            else if (ctx->running) { ctx->running = false; ctx->paused = true; }
-            else { ctx->running = true; ctx->paused = false; }
+            else if (ctx->running)
+            {
+                ctx->running = false;
+                ctx->paused = true;
+            }
+            else
+            {
+                ctx->running = true;
+                ctx->paused = false;
+            }
         }
     }
     y += BTN_H + 9;
 
-    if (DrawButton((Rectangle){p_bx, (float)y, p_bw, BTN_H}, "RESTART", C_BTN_IDLE, C_BTN_HOVER)) {
-        for (int i = 0; i < ctx->numCars; i++) {
-            Car *c      = &ctx->cars[i];
-            c->path_idx = 0; c->t = 0.0f; c->timer = 0.0f;
-            c->state    = (c->path && c->path_len > 1) ? CAR_MOVING : CAR_ARRIVED;
-            if (c->path && c->path_len > 0) {
-                c->x = ctx->positions[c->path[0]].x; c->y = ctx->positions[c->path[0]].y;
+    if (DrawButton((Rectangle){p_bx, (float)y, p_bw, BTN_H}, "RESTART", C_BTN_IDLE, C_BTN_HOVER))
+    {
+        for (int i = 0; i < ctx->numCars; i++)
+        {
+            Car* c = &ctx->cars[i];
+            c->path_idx = 0;
+            c->t = 0.0f;
+            c->timer = 0.0f;
+            c->state = (c->path && c->path_len > 1) ? CAR_MOVING : CAR_ARRIVED;
+            if (c->path && c->path_len > 0)
+            {
+                c->x = ctx->positions[c->path[0]].x;
+                c->y = ctx->positions[c->path[0]].y;
             }
         }
-        ctx->all_arrived = false; ctx->running = false; ctx->paused = false;
+        ctx->all_arrived = false;
+        ctx->running = false;
+        ctx->paused = false;
     }
     y += BTN_H + 14;
 
     DrawRectangle(PANEL_X + 12, y, PANEL_W - 24, 1, C_PANEL_SEP);
     y += 10;
-    char info[64]; snprintf(info, sizeof info, "Nodes: %d     Travelers: %d", ctx->num_nodes, ctx->num_cars);
+    char info[64];
+    snprintf(info, sizeof info, "Nodes: %d     Travelers: %d", ctx->num_nodes, ctx->num_cars);
     DrawText(info, PANEL_X + 14, y, 10, (Color){65, 98, 148, 190});
 }
 
-void DrawCarShape(float cx, float cy, float ca, float sa, float sz, Color col) {
+void DrawCarShape(float cx, float cy, float ca, float sa, float sz, Color col)
+{
     float cp = -sa, sp = ca;
-    Vector2 front = {cx + ca*sz*1.65f,         cy + sa*sz*1.65f};
-    Vector2 bl    = {cx - ca*sz*0.75f + cp*sz*0.95f,  cy - sa*sz*0.75f + sp*sz*0.95f};
-    Vector2 br    = {cx - ca*sz*0.75f - cp*sz*0.95f,  cy - sa*sz*0.75f - sp*sz*0.95f};
+    Vector2 front = {cx + ca * sz * 1.65f, cy + sa * sz * 1.65f};
+    Vector2 bl = {cx - ca * sz * 0.75f + cp * sz * 0.95f, cy - sa * sz * 0.75f + sp * sz * 0.95f};
+    Vector2 br = {cx - ca * sz * 0.75f - cp * sz * 0.95f, cy - sa * sz * 0.75f - sp * sz * 0.95f};
 
-    DrawTriangle((Vector2){front.x+2.5f, front.y+2.5f}, (Vector2){bl.x+2.5f, bl.y+2.5f}, (Vector2){br.x+2.5f, br.y+2.5f}, C_CAR_SHADOW);
+    DrawTriangle((Vector2){front.x + 2.5f, front.y + 2.5f}, (Vector2){bl.x + 2.5f, bl.y + 2.5f},
+                 (Vector2){br.x + 2.5f, br.y + 2.5f}, C_CAR_SHADOW);
     DrawTriangle(front, bl, br, col);
 
-    Vector2 hf = {cx + ca*sz*0.7f,        cy + sa*sz*0.7f};
-    Vector2 hl = {cx - ca*sz*0.1f + cp*sz*0.45f, cy - sa*sz*0.1f + sp*sz*0.45f};
-    Vector2 hr = {cx - ca*sz*0.1f - cp*sz*0.45f, cy - sa*sz*0.1f - sp*sz*0.45f};
+    Vector2 hf = {cx + ca * sz * 0.7f, cy + sa * sz * 0.7f};
+    Vector2 hl = {cx - ca * sz * 0.1f + cp * sz * 0.45f, cy - sa * sz * 0.1f + sp * sz * 0.45f};
+    Vector2 hr = {cx - ca * sz * 0.1f - cp * sz * 0.45f, cy - sa * sz * 0.1f - sp * sz * 0.45f};
     DrawTriangle(hf, hl, hr, (Color){255, 255, 255, 55});
 }
-
 
 
 bool RenderFrame(RenderCtx* ctx, Graph* g, float dt)
