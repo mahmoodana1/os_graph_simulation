@@ -404,6 +404,18 @@ void DrawSingleCar(Car *car, RenderCtx *ctx) {
     DrawCarShape(cx, cy, ca, sa, CAR_SZ, car->color);
     DrawCircleV((Vector2){cx, cy}, 2.2f, (Color){255, 255, 255, 190});
 }
+void DrawArrivedBanner(void) {
+    float alpha = (sinf(s_time * 2.8f) + 1.0f) * 0.5f;
+    int by = WIN_H / 2 - 54, bw = GRAPH_W, bh = 108;
+    DrawRectangle(0, by, bw, bh, C_SUCCESS_BG);
+    DrawRectangle(0, by,  bw, 2, C_SUCCESS_LINE);
+    DrawRectangle(0, by + bh - 2, bw, 2, C_SUCCESS_LINE);
+
+    int x1  = bw / 2 - MeasureText("ALL TRAVELERS ARRIVED", 30) / 2, x2  = bw / 2 - MeasureText("Simulation Complete  —  Press RESTART to replay", 13) / 2;
+    for (int d = 7; d >= 1; d--) DrawText("ALL TRAVELERS ARRIVED", x1 + d / 2, by + 18 + d / 2, 30, (Color){0, 200, 110, (unsigned char)((35 + 30 * alpha) / d)});
+    DrawText("ALL TRAVELERS ARRIVED", x1, by + 18, 30, C_SUCCESS_TXT);
+    DrawText("Simulation Complete  —  Press RESTART to replay", x2, by + 62, 13, (Color){100, 200, 155, 210});
+}
 
 void DrawPlayOverlay(RenderCtx *ctx) {
     float cx = GRAPH_W * 0.5f, cy = WIN_H * 0.5f, r = 50.0f, pulse = (sinf(s_time * 1.9f) + 1.0f) * 0.5f;
