@@ -366,6 +366,17 @@ RenderCtx* InitRenderer(int num_nodes, Vector2* positions, int num_cars)
     for (int i = 0; i < num_nodes; i++) ctx->positions[i] = positions[i];
     return ctx;
 }
+static bool DrawButton(Rectangle r, const char *label, Color bg, Color hov) {
+    Vector2 mp      = GetMousePosition();
+    bool    hovered = CheckCollisionPointRec(mp, r);
+    bool    clicked = hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    Color   fill    = hovered ? hov : bg;
+    DrawRectangleRounded((Rectangle){r.x - 1, r.y - 1, r.width + 2, r.height + 2}, 0.35f, 8, C_BTN_BORD);
+    DrawRectangleRounded(r, 0.35f, 8, fill);
+    int tw = MeasureText(label, 14);
+    DrawText(label, (int)(r.x + r.width * 0.5f - tw * 0.5f), (int)(r.y + r.height * 0.5f - 7), 14, C_BTN_TXT);
+    return clicked;
+}
 
 bool RenderFrame(RenderCtx* ctx, Graph* g, float dt)
 {
