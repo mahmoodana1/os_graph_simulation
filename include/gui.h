@@ -38,8 +38,14 @@ typedef enum { CAR_IDLE, CAR_MOVING, CAR_NODE_WAIT, CAR_ARRIVED } CarState;
 
 typedef struct {
     float x, y;
-    int path[64];
-    int path_len, seg, hop;
+    float     t;              /* Param along current edge   [0..1] */
+    float     speed;          /* dt multiplier for t               */
+    int       id;             /* Display index (0-based) */
+    /* Path through the graph (array of node indices, owned externally
+       or by the caller; gui does not free it). */
+    int      *path;
+    int       path_len;
+    int       path_idx;
     int total_hops;
     float timer;
     CarState state;
