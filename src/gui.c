@@ -7,12 +7,49 @@
 #include <stdlib.h>
 #include <string.h>
 
-static const Color NODE_ACCENTS[] = {
-    {210, 80, 70, 255},
-    {60, 155, 155, 255},
-    {50, 65, 90, 255},
-    {200, 150, 60, 255}
-};
+#define WIN_W      GUI_WIN_W
+#define WIN_H      GUI_WIN_H
+#define GRAPH_W     960
+#define PANEL_X     960
+#define PANEL_W     320
+#define NODE_SZ      42.0f
+#define CAR_SZ        7.5f
+#define BTN_H        38
+#define BTN_MX       14
+
+/* ── Palette ───────────────────────────────────────────────────────────── */
+#define C_BG           CLITERAL(Color){ 8,  12,  24, 255}
+#define C_GRID         CLITERAL(Color){20,  30,  55, 140}
+#define C_VIGN         CLITERAL(Color){ 0,   0,   0, 120}
+#define C_TRANS        CLITERAL(Color){ 0,   0,   0,   0}
+#define C_ROAD_CASE    CLITERAL(Color){ 4,   7,  16, 255}
+#define C_ROAD_MID     CLITERAL(Color){26,  50, 100, 255}
+#define C_ROAD_CTR     CLITERAL(Color){55, 105, 185, 255}
+#define C_ARROW        CLITERAL(Color){ 0, 155, 215,  90}
+#define C_BADGE_BG     CLITERAL(Color){12,  20,  42, 230}
+#define C_BADGE_BD     CLITERAL(Color){ 0, 155, 215, 130}
+#define C_BADGE_TXT    CLITERAL(Color){150, 205, 255, 255}
+#define C_NODE_RING    CLITERAL(Color){ 0, 175, 255, 170}
+#define C_NODE_SHADOW  CLITERAL(Color){ 0,   0,   0,  85}
+#define C_NODE_ID      CLITERAL(Color){195, 230, 255, 255}
+#define C_PANEL_BG     CLITERAL(Color){ 9,  14,  28, 245}
+#define C_PANEL_SEP    CLITERAL(Color){ 0, 135, 195,  75}
+#define C_PANEL_TITLE  CLITERAL(Color){ 0, 200, 255, 255}
+#define C_PANEL_TXT    CLITERAL(Color){150, 195, 240, 220}
+#define C_BTN_IDLE     CLITERAL(Color){16,  27,  55, 255}
+#define C_BTN_HOVER    CLITERAL(Color){ 0,  85, 155, 255}
+#define C_BTN_PLAY     CLITERAL(Color){ 0, 100,  60, 255}
+#define C_BTN_PLAY_HOV CLITERAL(Color){ 0, 145,  80, 255}
+#define C_BTN_BORD     CLITERAL(Color){ 0, 145, 210, 160}
+#define C_BTN_TXT      CLITERAL(Color){210, 235, 255, 255}
+#define C_SUCCESS_BG   CLITERAL(Color){ 0,  25,  18, 210}
+#define C_SUCCESS_TXT  CLITERAL(Color){ 0, 230, 130, 255}
+#define C_SUCCESS_LINE CLITERAL(Color){ 0, 200, 110, 255}
+#define C_CAR_SHADOW   CLITERAL(Color){ 0,   0,   0,  65}
+#define C_TRAIL1       CLITERAL(Color){255, 255, 255,  55}
+#define C_TRAIL2       CLITERAL(Color){255, 255, 255,  22}
+#define C_FPS_TXT      CLITERAL(Color){ 60,  90, 140, 200}
+
 
 void startGui(Graph* g, int paths[][64], int* path_lens, int num_travelers, pid_t* pids)
 {
