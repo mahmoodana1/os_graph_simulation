@@ -318,9 +318,32 @@ void DrawArrowAt(Vector2 pos, float ca, float sa, float sz, Color col)
 void DrawBackground(void)
 {
     ClearBackground(C_BG);
-    for (int x = 0; x <= GRAPH_W; x += 40)
-        for (int y = 0; y <= WIN_H; y += 40)
-            DrawCircle(x, y, 1.1f, C_GRID);
+
+    /* ── nebula clouds ── */
+    DrawCircleGradient(160, 110, 230.0f, (Color){ 70,  0, 130, 55}, C_TRANS);
+    DrawCircleGradient(820, 580, 270.0f, (Color){  0, 80, 150, 50}, C_TRANS);
+    DrawCircleGradient(760, 100, 190.0f, (Color){ 50,  0,  95, 48}, C_TRANS);
+    DrawCircleGradient( 90, 560, 180.0f, (Color){  0, 110,  85, 44}, C_TRANS);
+    DrawCircleGradient(480, 640, 150.0f, (Color){ 30, 60, 120, 38}, C_TRANS);
+
+    /* ── star field (deterministic LCG scatter) ── */
+    for (int i = 0; i < 140; i++) {
+        int x = (i * 6271 + 1543) % GRAPH_W;
+        int y = (i * 3947 +  897) % WIN_H;
+        float r = (i % 9 == 0) ? 2.0f : (i % 4 == 0) ? 1.3f : 0.7f;
+        unsigned char a = (unsigned char)(90 + (i * 53) % 130);
+        DrawCircleV((Vector2){(float)x, (float)y}, r, (Color){210, 225, 255, a});
+    }
+
+    /* ── faint grid (just enough to read depth) ── */
+    for (int x = 0; x <= GRAPH_W; x += 80)
+        DrawLine(x, 0, x, WIN_H, (Color){30, 50, 100, 22});
+    for (int y = 0; y <= WIN_H; y += 80)
+        DrawLine(0, y, GRAPH_W, y, (Color){30, 50, 100, 22});
+
+    /* ── central ambient glow ── */
+    DrawCircleGradient(GRAPH_W / 2, WIN_H / 2, 400.0f,
+                       (Color){0, 60, 145, 40}, C_TRANS);
 
     DrawRectangleGradientH(0, 0, 90, WIN_H, C_VIGN, C_TRANS);
     DrawRectangleGradientH(GRAPH_W - 90, 0, 90, WIN_H, C_TRANS, C_VIGN);
@@ -524,7 +547,7 @@ void DrawPlayOverlay(RenderCtx *ctx) {
     DrawCircleV((Vector2){cx, cy}, r + 14.0f + pulse * 6.0f, (Color){0, 200, 255, (unsigned char)(28 + 22 * pulse)});
     DrawCircleV((Vector2){cx, cy}, r, (Color){10, 18, 42, 235});
     DrawCircleLines((int)cx, (int)cy, r, (Color){0, 190, 255, (unsigned char)(170 + 70 * pulse)});
-    DrawTriangle((Vector2){cx + 24.0f, cy}, (Vector2){cx - 5.0f, cy - 18.0f}, (Vector2){cx - 5.0f, cy + 18.0f}, (Color){0, 210, 255, 230});
+    DrawTriangle((Vector2){cx + 16.0f, cy}, (Vector2){cx - 8.0f, cy - 16.0f}, (Vector2){cx - 8.0f, cy + 16.0f}, (Color){0, 210, 255, 230});
     DrawText("PRESS PLAY TO START", (int)(cx - MeasureText("PRESS PLAY TO START", 12) * 0.5f), (int)(cy + r + 14.0f), 12, (Color){0, 180, 255, (unsigned char)(160 + 70 * pulse)});
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointCircle(GetMousePosition(), (Vector2){cx, cy}, r)) {
