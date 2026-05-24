@@ -1,6 +1,5 @@
 #include "../include/gui.h"
 #include <math.h>
-#include <signal.h>
 #include <sys/types.h>
 #include <raymath.h>
 #include <stdio.h>
@@ -50,10 +49,7 @@
 #define C_TRAIL2       CLITERAL(Color){255, 255, 255,  22}
 #define C_FPS_TXT      CLITERAL(Color){ 60,  90, 140, 200}
 
-#define ROAD_THICK      12.0f
 #define MM_HEART        CLITERAL(Color){ 230,  50,  50, 255 }
-#define MM_RIVER        CLITERAL(Color){ 160, 220, 230, 255 }
-#define MM_RIVER_LABEL  CLITERAL(Color){ 140, 190, 200, 160 }
 
 #define TOAST_LIFETIME  3.0f
 #define TOAST_FADE_IN   0.25f
@@ -191,84 +187,6 @@ void DrawWeightBadge(Vector2 mid, int w, bool on_path)
              WHITE);
 }
 
-static Vector2 GetBezierPoint(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3,
-                              float t)
-{
-    float invT = 1.0f - t;
-    return (Vector2){
-        p0.x * (invT * invT * invT) + p1.x * (3 * invT * invT * t) +
-        p2.x * (3 * invT * t * t) + p3.x * (t * t * t),
-        p0.y * (invT * invT * invT) + p1.y * (3 * invT * invT * t) +
-        p2.y * (3 * invT * t * t) + p3.y * (t * t * t)
-    };
-}
-
-static Vector2 GetBezierTangent(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3,
-                                float t)
-{
-    float u = 1.0f - t;
-    return (Vector2){
-        3.0f * (u * u * (p1.x - p0.x) + 2.0f * u * t * (p2.x - p1.x) +
-            t * t * (p3.x - p2.x)),
-        3.0f * (u * u * (p1.y - p0.y) + 2.0f * u * t * (p2.y - p1.y) +
-            t * t * (p3.y - p2.y))
-    };
-}
-
-static void GetEdgeBezier(Vector2 from, Vector2 to, Vector2* c1, Vector2* c2)
-{
-    Vector2 dir = Vector2Subtract(to, from);
-    float len = Vector2Length(dir);
-    if (len < 1.0f)
-    {
-        *c1 = from;
-        *c2 = to;
-        return;
-    }
-    Vector2 perp = {-dir.y / len, dir.x / len};
-    float curve = fminf(len * 0.20f, 40.0f);
-    *c1 = (Vector2){
-        from.x + dir.x * 0.33f + perp.x * curve,
-        from.y + dir.y * 0.33f + perp.y * curve
-    };
-    *c2 = (Vector2){
-        to.x - dir.x * 0.33f + perp.x * curve,
-        to.y - dir.y * 0.33f + perp.y * curve
-    };
-}
-
-static void DrawRoadSign(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p3,
-                         float t, int w, bool on_path)
-{
-    Vector2 roadPt = GetBezierPoint(p0, c1, c2, p3, t);
-    Vector2 tang = GetBezierTangent(p0, c1, c2, p3, t);
-    float tLen = Vector2Length(tang);
-    if (tLen < 0.1f)
-        return;
-    Vector2 rperp = {tang.y / tLen, -tang.x / tLen};
-    Vector2 signPt = {roadPt.x + rperp.x * 24.0f, roadPt.y + rperp.y * 24.0f};
-    Vector2 postBase = {
-        roadPt.x + rperp.x * (ROAD_THICK * 0.5f + 3.0f),
-        roadPt.y + rperp.y * (ROAD_THICK * 0.5f + 3.0f)
-    };
-    DrawLineEx(postBase, signPt, 1.5f, (Color){50, 50, 55, 210});
-    DrawWeightBadge(signPt, w, on_path);
-}
-
-static void DrawRiverBranch(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p1,
-                            float thick)
-{
-    Vector2 pts[4] = {p0, c1, c2, p1};
-    DrawSplineBezierCubic(pts, 4, thick, MM_RIVER);
-    for (float t = 0.3f; t <= 0.7f; t += 0.4f)
-    {
-        Vector2 pos = GetBezierPoint(p0, c1, c2, p1, t);
-        Vector2 next = GetBezierPoint(p0, c1, c2, p1, t + 0.01f);
-        float angle = atan2f(next.y - pos.y, next.x - pos.x) * (180.0f / PI);
-        DrawTextPro(GetFontDefault(), "ISAR", pos, (Vector2){0, 0}, angle,
-                    12.0f, 2.0f, MM_RIVER_LABEL);
-    }
-}
 
 /* ── Bezier helpers ──────────────────────────────────────────────────── */
 static inline Vector2 BezPt(Vector2 p0, Vector2 c1, Vector2 c2, Vector2 p3, float t)
