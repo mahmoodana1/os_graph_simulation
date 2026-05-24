@@ -147,7 +147,7 @@ void startGui(Graph *g, int paths[][64], int *path_lens, int num_travelers) {
     for (int i = 0; i < num_travelers; i++) {
         Car *c      = &ctx->cars[i]; c->id       = i; c->color    = traveler_colors[i % 9];
         c->path     = malloc(path_lens[i] * sizeof(int)); memcpy(c->path, paths[i], path_lens[i] * sizeof(int));
-        c->path_len = path_lens[i]; c->path_idx = 0; c->t        = 0.0f; c->speed    = 0.55f;
+        c->path_len = path_lens[i]; c->path_idx = 0; c->t        = 0.0f; c->speed    = 1.1f;
         c->state    = (path_lens[i] > 1) ? CAR_MOVING : CAR_ARRIVED;
         c->notified = (c->state == CAR_ARRIVED); /* trivial path — skip toast */
         if (path_lens[i] > 0) { c->x = positions[c->path[0]].x; c->y = positions[c->path[0]].y; }
@@ -396,7 +396,7 @@ void UpdateCar(Car* car, RenderCtx* ctx, Graph *g, float dt)
         car->y = ctx->positions[ni].y;
         car->t = 1.0f;
         car->state = CAR_NODE_WAIT;
-        car->timer = 0.22f;
+        car->timer = 0.10f;
     }
     else
     {
