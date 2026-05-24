@@ -352,7 +352,14 @@ void DrawEdges(RenderCtx* ctx, Graph* g)
             DrawEdge(ctx->positions[i], ctx->positions[e->id], e->weight);
 }
 
-void UpdateCar(Car* car, RenderCtx* ctx, float dt)
+static int GetEdgeWeight(Graph *g, int from, int to)
+{
+    for (Node *e = g->adj[from]; e; e = e->next)
+        if (e->id == to) return e->weight;
+    return 1;
+}
+
+void UpdateCar(Car* car, RenderCtx* ctx, Graph *g, float dt)
 {
     if (car->state == CAR_ARRIVED || car->state == CAR_IDLE || !car->path) return;
 
@@ -378,7 +385,10 @@ void UpdateCar(Car* car, RenderCtx* ctx, float dt)
         return;
     }
 
-    car->t += car->speed * dt;
+    int from = car->path[car->path_idx];
+    int to   = car->path[car->path_idx + 1];
+    int w    = GetEdgeWeight(g, from, to);
+    car->t += (car->speed / (float)w) * dt;
     if (car->t >= 1.0f)
     {
         int ni = car->path[car->path_idx + 1];
@@ -390,8 +400,6 @@ void UpdateCar(Car* car, RenderCtx* ctx, float dt)
     }
     else
     {
-        int from = car->path[car->path_idx];
-        int to = car->path[car->path_idx + 1];
         Vector2 c1, c2;
         EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
         Vector2 pos = BezPt(ctx->positions[from], c1, c2, ctx->positions[to], car->t);
@@ -400,13 +408,13 @@ void UpdateCar(Car* car, RenderCtx* ctx, float dt)
     }
 }
 
-void UpdateCars(RenderCtx* ctx, float dt)
+void UpdateCars(RenderCtx* ctx, Graph *g, float dt)
 {
     if (ctx->paused || !ctx->running) return;
     bool all = true;
     for (int i = 0; i < ctx->numCars; i++)
     {
-        UpdateCar(&ctx->cars[i], ctx, dt);
+        UpdateCar(&ctx->cars[i], ctx, g, dt);
         Car *c = &ctx->cars[i];
         if (c->state == CAR_ARRIVED && !c->notified) {
             c->notified = true;
@@ -671,7 +679,7 @@ void DrawCarShape(float cx, float cy, float ca, float sa, float sz, Color col)
 
 void RenderFrame(RenderCtx *ctx, Graph *g, float dt) {
     s_time += dt;
-    UpdateCars(ctx, dt);
+    UpdateCars(ctx, g, dt);
     UpdateToasts(ctx, dt);
     DrawBackground(); DrawEdges(ctx, g); DrawNodes(ctx);
     for (int i = 0; i < ctx->numCars; i++) DrawSingleCar(&ctx->cars[i], ctx);
