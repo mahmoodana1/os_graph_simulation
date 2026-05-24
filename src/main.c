@@ -38,8 +38,7 @@ int main(int argc, char *argv[]) {
         pids[i] = pid;
     }
 
-    startGui(g, gui_paths, paths, travelers.count, pids);
-
+    startGui(g, gui_paths, paths, travelers.count);
     // cleanup after GUI closes incase some processes are still alive
     for (int i = 0; i < travelers.count; i++) {
         waitpid(pids[i], NULL, 0);
