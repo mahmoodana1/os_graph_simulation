@@ -4,14 +4,14 @@ LIBS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 BUILD_DIR = build
 
 # the default target
-all: milestone4
+all: milestone5
 
 # create the build directory once
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 # Linking rules
-milestone4: $(BUILD_DIR)/main.o $(BUILD_DIR)/graph.o $(BUILD_DIR)/dijkstra.o $(BUILD_DIR)/gui.o $(BUILD_DIR)/utils.o | $(BUILD_DIR)
+milestone5: $(BUILD_DIR)/main.o $(BUILD_DIR)/graph.o $(BUILD_DIR)/dijkstra.o $(BUILD_DIR)/gui.o $(BUILD_DIR)/utils.o | $(BUILD_DIR)
 	$(CC) $^ -o sim $(LIBS)
 
 # creating the object files
