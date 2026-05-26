@@ -9,4 +9,6 @@ typedef struct {
   int ready; // flag: 1= new message available, 0= already read
 } TravelerMsg;
 
+void cleanup(int);
+
 #endif

@@ -14,15 +14,6 @@
 
 #define MAX_TRAVELERS 5
 
-char *shm_ptr;
-int shm_id;
-
-void cleanup(int sig) {
-  shmdt(shm_ptr);
-  shmctl(shm_id, IPC_RMID, NULL);
-  exit(0);
-}
-
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     printf("Usage: %s <input_file>\n", argv[0]);
@@ -50,13 +41,13 @@ int main(int argc, char *argv[]) {
 
   size_t SHM_SIZE = sizeof(TravelerMsg) * MAX_TRAVELERS;
 
-  shm_id = shmget(key, SHM_SIZE, IPC_CREAT | IPC_EXCL | 0600);
+  int shm_id = shmget(key, SHM_SIZE, IPC_CREAT | IPC_EXCL | 0600);
   if (shm_id == -1) {
     perror("shmget failed");
     exit(EXIT_FAILURE);
   }
 
-  shm_ptr = (char *)shmat(shm_id, NULL, 0);
+  char *shm_ptr = (char *)shmat(shm_id, NULL, 0);
   if (shm_ptr == (void *)-1) {
     perror("shmat failed");
     exit(EXIT_FAILURE);
