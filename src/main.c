@@ -76,5 +76,9 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
+  if (shmctl(shm_id, IPC_RMID, NULL) == -1) {
+    perror("IPC_RMID failed");
+    exit(EXIT_FAILURE);
+  }
   return EXIT_SUCCESS;
 }
