@@ -2,6 +2,7 @@
 #include "../include/graph.h"
 #include "../include/gui.h"
 #include "../include/ipc.h"
+#include <signal.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,11 +14,23 @@
 
 #define MAX_TRAVELERS 5
 
+char *shm_ptr;
+int shm_id;
+
+void cleanup(int sig) {
+  shmdt(shm_ptr);
+  shmctl(shm_id, IPC_RMID, NULL);
+  exit(0);
+}
+
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     printf("Usage: %s <input_file>\n", argv[0]);
     return EXIT_FAILURE;
   }
+
+  signal(SIGINT, cleanup); // to cleanup after closing the window
+  signal(SIGTERM, cleanup);
 
   TravelerList travelers;
   Graph *g = loadGraph(argv[1], &travelers);
@@ -37,13 +50,12 @@ int main(int argc, char *argv[]) {
 
   size_t SHM_SIZE = sizeof(TravelerMsg) * MAX_TRAVELERS;
 
-  int shm_id = shmget(key, SHM_SIZE, IPC_CREAT | IPC_EXCL | 0600);
+  shm_id = shmget(key, SHM_SIZE, IPC_CREAT | IPC_EXCL | 0600);
   if (shm_id == -1) {
     perror("shmget failed");
     exit(EXIT_FAILURE);
   }
 
-  char *shm_ptr;
   shm_ptr = (char *)shmat(shm_id, NULL, 0);
   if (shm_ptr == (void *)-1) {
     perror("shmat failed");
@@ -60,6 +72,7 @@ int main(int argc, char *argv[]) {
     if (pid == 0) {
       printf("[%d] started\n", getpid());
       pause();
+      // shmdt(shm_ptr); // each child proccess should detach before exit
       return EXIT_SUCCESS;
     }
     pids[i] = pid;

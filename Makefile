@@ -11,7 +11,7 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 # Linking rules
-milestone5: $(BUILD_DIR)/main.o $(BUILD_DIR)/graph.o $(BUILD_DIR)/dijkstra.o $(BUILD_DIR)/gui.o $(BUILD_DIR)/utils.o | $(BUILD_DIR)
+milestone5: $(BUILD_DIR)/main.o $(BUILD_DIR)/graph.o $(BUILD_DIR)/dijkstra.o $(BUILD_DIR)/gui.o $(BUILD_DIR)/utils.o $(BUILD_DIR)/ipc.o| $(BUILD_DIR)
 	$(CC) $^ -o sim $(LIBS)
 
 # creating the object files
@@ -22,6 +22,10 @@ $(BUILD_DIR)/graph.o:
 $(BUILD_DIR)/utils.o:
 	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c src/utils.c -o $(BUILD_DIR)/utils.o
+
+$(BUILD_DIR)/ipc.o:
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c src/ipc.c -o $(BUILD_DIR)/ipc.o
 
 $(BUILD_DIR)/dijkstra.o:
 	mkdir -p $(BUILD_DIR)
