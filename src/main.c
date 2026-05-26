@@ -63,7 +63,6 @@ int main(int argc, char *argv[]) {
     if (pid == 0) {
       printf("[%d] started\n", getpid());
       pause();
-      // shmdt(shm_ptr); // each child proccess should detach before exit
       return EXIT_SUCCESS;
     }
     pids[i] = pid;
