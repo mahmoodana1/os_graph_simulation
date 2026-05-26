@@ -10,5 +10,6 @@ typedef struct {
 } TravelerMsg;
 
 void cleanup(int);
+char *createShm();
 
 #endif

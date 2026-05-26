@@ -12,8 +12,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define MAX_TRAVELERS 5
-
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     printf("Usage: %s <input_file>\n", argv[0]);
@@ -32,26 +30,6 @@ int main(int argc, char *argv[]) {
   pid_t pids[travelers.count];
   int gui_paths[travelers.count][64];
   int paths[travelers.count];
-
-  key_t key = ftok("/tmp", 'y');
-  if (key == -1) {
-    perror("ftok failed");
-    exit(EXIT_FAILURE);
-  }
-
-  size_t SHM_SIZE = sizeof(TravelerMsg) * MAX_TRAVELERS;
-
-  int shm_id = shmget(key, SHM_SIZE, IPC_CREAT | IPC_EXCL | 0600);
-  if (shm_id == -1) {
-    perror("shmget failed");
-    exit(EXIT_FAILURE);
-  }
-
-  char *shm_ptr = (char *)shmat(shm_id, NULL, 0);
-  if (shm_ptr == (void *)-1) {
-    perror("shmat failed");
-    exit(EXIT_FAILURE);
-  }
 
   // calculate path for each traveler
   for (int i = 0; i < travelers.count; i++) {
