@@ -2,6 +2,11 @@
 #define IPC_H
 
 #include <sys/types.h>
+
+extern char *shm_ptr;
+extern int shm_id;
+extern pid_t main_pid;
+
 typedef struct {
   pid_t pid;
   int current_node;
