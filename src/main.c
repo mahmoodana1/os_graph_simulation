@@ -31,6 +31,8 @@ int main(int argc, char *argv[]) {
   int gui_paths[travelers.count][64];
   int paths[travelers.count];
 
+  createShm();
+
   // calculate path for each traveler
   for (int i = 0; i < travelers.count; i++) {
     paths[i] = BuildDijkstraPath(g, travelers.travelers[i].src,
@@ -52,14 +54,7 @@ int main(int argc, char *argv[]) {
     waitpid(pids[i], NULL, 0);
   }
 
-  if (shmdt(shm_ptr) == -1) {
-    perror("shmdt failed");
-    exit(EXIT_FAILURE);
-  }
+  cleanup(0);
 
-  if (shmctl(shm_id, IPC_RMID, NULL) == -1) {
-    perror("IPC_RMID failed");
-    exit(EXIT_FAILURE);
-  }
   return EXIT_SUCCESS;
 }
