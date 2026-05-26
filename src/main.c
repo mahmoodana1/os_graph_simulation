@@ -43,6 +43,13 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
+  char *shm_ptr;
+  shm_ptr = (char *)shmat(shm_id, NULL, 0);
+  if (shm_ptr == (void *)-1) {
+    perror("shmat failed");
+    exit(EXIT_FAILURE);
+  }
+
   // calculate path for each traveler
   for (int i = 0; i < travelers.count; i++) {
     paths[i] = BuildDijkstraPath(g, travelers.travelers[i].src,
