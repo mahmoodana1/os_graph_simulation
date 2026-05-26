@@ -71,5 +71,10 @@ int main(int argc, char *argv[]) {
     waitpid(pids[i], NULL, 0);
   }
 
+  if (shmdt(shm_ptr) == -1) {
+    perror("shmdt failed");
+    exit(EXIT_FAILURE);
+  }
+
   return EXIT_SUCCESS;
 }
