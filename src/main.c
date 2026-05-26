@@ -1,12 +1,17 @@
 #include "../include/dijkstra.h"
 #include "../include/graph.h"
 #include "../include/gui.h"
+#include "../include/ipc.h"
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+#define MAX_TRAVELERS 5
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -27,6 +32,14 @@ int main(int argc, char *argv[]) {
   key_t key = ftok("/tmp", 'y');
   if (key == -1) {
     perror("ftok failed");
+    exit(EXIT_FAILURE);
+  }
+
+  size_t SHM_SIZE = sizeof(TravelerMsg) * MAX_TRAVELERS;
+
+  int shm_id = shmget(key, SHM_SIZE, IPC_CREAT | IPC_EXCL | 0600);
+  if (shm_id == -1) {
+    perror("shmget failed");
     exit(EXIT_FAILURE);
   }
 
