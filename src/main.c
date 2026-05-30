@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   int paths[travelers.count];
 
   createShm();
-
+  TravelerMsg *shared_mem = (TravelerMsg *)shm_ptr;
   // calculate path for each traveler
   for (int i = 0; i < travelers.count; i++) {
     paths[i] = BuildDijkstraPath(g, travelers.travelers[i].src,
@@ -41,9 +41,28 @@ int main(int argc, char *argv[]) {
     pid_t pid = fork();
 
     if (pid == 0) {
-      printf("[%d] started\n", getpid());
-      pause();
-      return EXIT_SUCCESS;
+      PathResult result = solveDijkstra(
+     g,
+     travelers.travelers[i].src,
+     travelers.travelers[i].dst
+ );
+
+      for (int j = 0; j < result.length; j++) {
+        shared_mem[i].pid = getpid();
+        shared_mem[i].current_node = result.nodes[j];
+
+        if (j + 1 < result.length) {
+          shared_mem[i].next_node = result.nodes[j + 1];
+        } else {
+          shared_mem[i].next_node = -1;
+        }
+
+        shared_mem[i].ready = 1;
+
+        usleep(300000);
+      }
+
+      exit(0);
     }
     pids[i] = pid;
   }
