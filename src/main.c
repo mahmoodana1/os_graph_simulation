@@ -42,33 +42,21 @@ int main(int argc, char *argv[]) {
 
     if (pid == 0) {
       PathResult result = solveDijkstra(
-     g,
-     travelers.travelers[i].src,
-     travelers.travelers[i].dst
- );
+          g,
+          travelers.travelers[i].src,
+          travelers.travelers[i].dst
+      );
 
-      for (int j = 0; j < result.length; j++) {
-        shared_mem[i].pid = getpid();
-        shared_mem[i].current_node = result.nodes[j];
-
-        if (j + 1 < result.length) {
-          shared_mem[i].next_node = result.nodes[j + 1];
-        } else {
-          shared_mem[i].next_node = -1;
-        }
-
-        shared_mem[i].ready = 1;
-
-        usleep(300000);
-      }
+      writeTravelerPathToSharedMemory(shared_mem, i, result);
 
       exit(0);
     }
+
     pids[i] = pid;
   }
 
   startGui(g, gui_paths, paths, travelers.count);
-  // cleanup after GUI closes incase some processes are still alive
+
   for (int i = 0; i < travelers.count; i++) {
     waitpid(pids[i], NULL, 0);
   }
