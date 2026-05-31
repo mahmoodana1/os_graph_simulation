@@ -4,8 +4,9 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <unistd.h>
-
 #define MAX_TRAVELERS 8
+
+
 
 char *shm_ptr;
 int shm_id;
@@ -45,5 +46,23 @@ void createShm() {
     if (shm_ptr == (void *)-1) {
         perror("shmat failed");
         exit(EXIT_FAILURE);
+    }
+}
+void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
+                                     int traveler_index,
+                                     PathResult result) {
+    for (int j = 0; j < result.length; j++) {
+        shared_mem[traveler_index].pid = getpid();
+        shared_mem[traveler_index].current_node = result.nodes[j];
+
+        if (j + 1 < result.length) {
+            shared_mem[traveler_index].next_node = result.nodes[j + 1];
+        } else {
+            shared_mem[traveler_index].next_node = -1;
+        }
+
+        shared_mem[traveler_index].ready = 1;
+
+        usleep(300000);
     }
 }

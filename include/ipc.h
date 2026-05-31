@@ -2,6 +2,7 @@
 #define IPC_H
 
 #include <sys/types.h>
+#include "utils.h"
 
 extern char *shm_ptr;
 extern int shm_id;
@@ -16,5 +17,7 @@ typedef struct {
 
 void cleanup(int);
 void createShm();
-
+void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
+                                     int traveler_index,
+                                     PathResult result);
 #endif
