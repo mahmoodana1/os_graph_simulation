@@ -238,14 +238,11 @@ void DrawBackground(void)
     ClearBackground(C_BG);
 
     /* ── nebula clouds ── */
-    DrawCircleGradient((Vector2){160, 110}, 230.0f, (Color){70, 0, 130, 55}, C_TRANS);
-    DrawCircleGradient((Vector2){820, 580}, 270.0f, (Color){0, 80, 150, 50}, C_TRANS);
-    DrawCircleGradient((Vector2){760, 100}, 190.0f, (Color){50, 0, 95, 48}, C_TRANS);
-    DrawCircleGradient((Vector2){90, 560}, 180.0f, (Color){0, 110, 85, 44}, C_TRANS);
-    DrawCircleGradient((Vector2){480, 640}, 150.0f, (Color){30, 60, 120, 38}, C_TRANS);
-
-    DrawCircleGradient((Vector2){GRAPH_W / 2, WIN_H / 2}, 400.0f,
-                       (Color){0, 60, 145, 40}, C_TRANS);
+    DrawCircleGradient(160, 110, 230.0f, (Color){ 70,  0, 130, 55}, C_TRANS);
+    DrawCircleGradient(820, 580, 270.0f, (Color){  0, 80, 150, 50}, C_TRANS);
+    DrawCircleGradient(760, 100, 190.0f, (Color){ 50,  0,  95, 48}, C_TRANS);
+    DrawCircleGradient( 90, 560, 180.0f, (Color){  0, 110,  85, 44}, C_TRANS);
+    DrawCircleGradient(480, 640, 150.0f, (Color){ 30, 60, 120, 38}, C_TRANS);
 
     /* ── star field (deterministic LCG scatter) ── */
     for (int i = 0; i < 140; i++) {
