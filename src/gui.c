@@ -263,8 +263,8 @@ void DrawBackground(void)
         DrawLine(0, y, GRAPH_W, y, (Color){30, 50, 100, 22});
 
     /* ── central ambient glow ── */
-    DrawCircleGradient((Vector2){GRAPH_W / 2, WIN_H / 2}, 400.0f,
-                   (Color){0, 60, 145, 40}, C_TRANS);
+    DrawCircleGradient(GRAPH_W / 2, WIN_H / 2, 400.0f,
+                       (Color){0, 60, 145, 40}, C_TRANS);
 
     DrawRectangleGradientH(0, 0, 90, WIN_H, C_VIGN, C_TRANS);
     DrawRectangleGradientH(GRAPH_W - 90, 0, 90, WIN_H, C_TRANS, C_VIGN);
