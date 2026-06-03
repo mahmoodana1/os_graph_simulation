@@ -4,9 +4,8 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <unistd.h>
+
 #define MAX_TRAVELERS 8
-
-
 
 char *shm_ptr;
 int shm_id;
@@ -25,7 +24,7 @@ void cleanup(int sig) {
     exit(0);
 }
 
-void createShm() {
+void createShm(const int travelers_count) {
     main_pid = getpid();
 
     key_t key = ftok("/tmp", 'y');
@@ -34,7 +33,7 @@ void createShm() {
         exit(EXIT_FAILURE);
     }
 
-    size_t SHM_SIZE = sizeof(TravelerMsg) * MAX_TRAVELERS;
+    size_t SHM_SIZE = sizeof(TravelerMsg) * travelers_count;
 
     shm_id = shmget(key, SHM_SIZE, IPC_CREAT | IPC_EXCL | 0600);
     if (shm_id == -1) {
@@ -48,9 +47,17 @@ void createShm() {
         exit(EXIT_FAILURE);
     }
 }
+
+void initTravelerMsg(TravelerMsg *msg, const int taraveler_count) {
+    msg->pid = -1;
+    msg->current_node = -1;
+    msg->next_node = -1;
+    sem_init(&msg->sem_ready_to_read, 1, 0);
+    sem_init(&msg->sem_ready_to_write, 1, 1);
+}
+
 void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
-                                     int traveler_index,
-                                     PathResult result) {
+                                     int traveler_index, PathResult result) {
     for (int j = 0; j < result.length; j++) {
         shared_mem[traveler_index].pid = getpid();
         shared_mem[traveler_index].current_node = result.nodes[j];
@@ -60,9 +67,5 @@ void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
         } else {
             shared_mem[traveler_index].next_node = -1;
         }
-
-        shared_mem[traveler_index].ready = 1;
-
-        usleep(300000);
     }
 }
