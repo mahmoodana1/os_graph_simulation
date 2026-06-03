@@ -238,11 +238,11 @@ void DrawBackground(void)
     ClearBackground(C_BG);
 
     /* ── nebula clouds ── */
-    DrawCircleGradient(160, 110, 230.0f, (Color){ 70,  0, 130, 55}, C_TRANS);
-    DrawCircleGradient(820, 580, 270.0f, (Color){  0, 80, 150, 50}, C_TRANS);
-    DrawCircleGradient(760, 100, 190.0f, (Color){ 50,  0,  95, 48}, C_TRANS);
-    DrawCircleGradient( 90, 560, 180.0f, (Color){  0, 110,  85, 44}, C_TRANS);
-    DrawCircleGradient(480, 640, 150.0f, (Color){ 30, 60, 120, 38}, C_TRANS);
+    DrawCircleGradient((Vector2){160, 110}, 230.0f, (Color){ 70,  0, 130, 55}, C_TRANS);
+    DrawCircleGradient((Vector2){820, 580}, 270.0f, (Color){  0, 80, 150, 50}, C_TRANS);
+    DrawCircleGradient((Vector2){760, 100}, 190.0f, (Color){ 50,  0,  95, 48}, C_TRANS);
+    DrawCircleGradient((Vector2){ 90, 560}, 180.0f, (Color){  0, 110,  85, 44}, C_TRANS);
+    DrawCircleGradient((Vector2){480, 640}, 150.0f, (Color){ 30, 60, 120, 38}, C_TRANS);
 
     /* ── star field (deterministic LCG scatter) ── */
     for (int i = 0; i < 140; i++) {
@@ -260,7 +260,7 @@ void DrawBackground(void)
         DrawLine(0, y, GRAPH_W, y, (Color){30, 50, 100, 22});
 
     /* ── central ambient glow ── */
-    DrawCircleGradient(GRAPH_W / 2, WIN_H / 2, 400.0f,
+    DrawCircleGradient((Vector2){GRAPH_W / 2, WIN_H / 2}, 400.0f,
                        (Color){0, 60, 145, 40}, C_TRANS);
 
     DrawRectangleGradientH(0, 0, 90, WIN_H, C_VIGN, C_TRANS);
@@ -476,7 +476,7 @@ void DrawPlayOverlay(RenderCtx *ctx) {
     DrawTriangle((Vector2){cx + 16.0f, cy}, (Vector2){cx - 8.0f, cy - 16.0f}, (Vector2){cx - 8.0f, cy + 16.0f}, (Color){0, 210, 255, 230});
     DrawText("PRESS PLAY TO START", (int)(cx - MeasureText("PRESS PLAY TO START", 12) * 0.5f), (int)(cy + r + 14.0f), 12, (Color){0, 180, 255, (unsigned char)(160 + 70 * pulse)});
 
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointCircle(GetMousePosition(), (Vector2){cx, cy}, r)) {
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && CheckCollisionPointCircle(GetMousePosition(), (Vector2){cx, cy}, r)) {
         ctx->running = true; ctx->paused  = false;
     }
 }
@@ -506,7 +506,7 @@ static bool DrawButton(Rectangle r, const char* label, Color bg, Color hov)
 {
     Vector2 mp = GetMousePosition();
     bool hovered = CheckCollisionPointRec(mp, r);
-    bool clicked = hovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    bool clicked = hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
     Color fill = hovered ? hov : bg;
     DrawRectangleRounded((Rectangle){r.x - 1, r.y - 1, r.width + 2, r.height + 2}, 0.35f, 8, C_BTN_BORD);
     DrawRectangleRounded(r, 0.35f, 8, fill);
