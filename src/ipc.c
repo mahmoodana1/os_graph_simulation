@@ -7,7 +7,7 @@
 
 #define MAX_TRAVELERS 8
 
-char *shm_ptr;
+TravelerMsg *shm_ptr;
 int shm_id;
 pid_t main_pid;
 
@@ -41,24 +41,30 @@ void createShm(const int travelers_count) {
         exit(EXIT_FAILURE);
     }
 
-    shm_ptr = (char *)shmat(shm_id, NULL, 0);
+    shm_ptr = (TravelerMsg *)shmat(shm_id, NULL, 0);
     if (shm_ptr == (void *)-1) {
         perror("shmat failed");
         exit(EXIT_FAILURE);
     }
 }
 
-void initTravelerMsg(TravelerMsg *msg, const int taraveler_count) {
-    msg->pid = -1;
-    msg->current_node = -1;
-    msg->next_node = -1;
-    sem_init(&msg->sem_ready_to_read, 1, 0);
-    sem_init(&msg->sem_ready_to_write, 1, 1);
+void initTravelerMsg(TravelerMsg *shared_mem, const int travelers_count) {
+    for (int i = 0; i < travelers_count; i++) {
+        shared_mem[i].pid = -1;
+        shared_mem[i].current_node = -1;
+        shared_mem[i].next_node = -1;
+
+        // Initial value = 0 (Red Light). The mailbox is currently empty.
+        sem_init(&shared_mem[i].sem_ready_to_read, 1, 0);
+        // Initial value = 1 (Green Light). There is 1 available empty slot.
+        sem_init(&shared_mem[i].sem_ready_to_write, 1, 1);
+    }
 }
 
 void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
                                      int traveler_index, PathResult result) {
     for (int j = 0; j < result.length; j++) {
+        sem_wait(&shared_mem[traveler_index].sem_ready_to_write);
         shared_mem[traveler_index].pid = getpid();
         shared_mem[traveler_index].current_node = result.nodes[j];
 
@@ -67,5 +73,6 @@ void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
         } else {
             shared_mem[traveler_index].next_node = -1;
         }
+        sem_post(&shared_mem[traveler_index].sem_ready_to_read);
     }
 }

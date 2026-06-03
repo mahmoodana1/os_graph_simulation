@@ -5,10 +5,6 @@
 #include <semaphore.h>
 #include <sys/types.h>
 
-extern char *shm_ptr;
-extern int shm_id;
-extern pid_t main_pid;
-
 typedef struct {
     pid_t pid;
     int current_node;
@@ -17,6 +13,10 @@ typedef struct {
     sem_t sem_ready_to_write;
 
 } TravelerMsg;
+
+extern TravelerMsg *shm_ptr;
+extern int shm_id;
+extern pid_t main_pid;
 
 void cleanup(int);
 void createShm(const int travelers_count);

@@ -33,8 +33,7 @@ int main(int argc, char *argv[]) {
     int paths[travelers.count];
 
     createShm(travelers.count);
-    TravelerMsg *shared_mem = (TravelerMsg *)shm_ptr;
-    initTravelerMsg(shared_mem, travelers.count);
+    initTravelerMsg(shm_ptr, travelers.count);
 
     // calculate path for each traveler
     for (int i = 0; i < travelers.count; i++) {
@@ -47,7 +46,7 @@ int main(int argc, char *argv[]) {
             PathResult result = solveDijkstra(g, travelers.travelers[i].src,
                                               travelers.travelers[i].dst);
 
-            writeTravelerPathToSharedMemory(shared_mem, i, result);
+            writeTravelerPathToSharedMemory(shm_ptr, i, result);
 
             exit(0);
         }
