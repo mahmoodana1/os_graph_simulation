@@ -8,22 +8,21 @@
 /* --- Simulation Layout Constants --- */
 
 #ifndef GUI_WIN_W
-#define GUI_WIN_W  1280
+#define GUI_WIN_W 1280
 #endif
 #ifndef GUI_WIN_H
-#define GUI_WIN_H   720
+#define GUI_WIN_H 720
 #endif
 
-
 #define NUM_STATION_TYPES 4
-#define MAX_TOASTS        8
+#define MAX_TOASTS 8
 
 /* --- Toast Notification --- */
 typedef struct {
-    char  text[32];   /* "Traveler X" */
+    char text[32]; /* "Traveler X" */
     Color color;
-    float timer;      /* counts down from TOAST_LIFETIME to 0 */
-    bool  active;
+    float timer; /* counts down from TOAST_LIFETIME to 0 */
+    bool active;
 } Toast;
 
 /* --- High-level GUI Entry Point --- */
@@ -37,21 +36,21 @@ typedef enum { CAR_IDLE, CAR_MOVING, CAR_NODE_WAIT, CAR_ARRIVED } CarState;
 
 typedef struct {
     float x, y;
-    float     t;              /* Param along current edge   [0..1] */
-    float     speed;          /* dt multiplier for t               */
-    int       id;             /* Display index (0-based) */
+    float t;     /* Param along current edge   [0..1] */
+    float speed; /* dt multiplier for t               */
+    int id;      /* Display index (0-based) */
     /* Path through the graph (array of node indices, owned externally
        or by the caller; gui does not free it). */
-    int      *path;
-    int       path_len;
-    int       path_idx;
+    int *path;
+    int path_len;
+    int path_idx;
     int total_hops;
     float timer;
     CarState state;
     Color color;
-    char      path_str[128];
-    float     last_ca, last_sa; /* last heading, held across non-moving states */
-    bool      notified;        /* true once the arrival toast has fired */
+    char path_str[128];
+    float last_ca, last_sa; /* last heading, held across non-moving states */
+    bool notified;          /* true once the arrival toast has fired */
 } Car;
 
 /* --- Main Renderer Context --- */
@@ -64,7 +63,7 @@ typedef struct {
     bool running;
     bool all_arrived;
     Texture2D stationTextures[NUM_STATION_TYPES];
-    Toast     toasts[MAX_TOASTS];
+    Toast toasts[MAX_TOASTS];
 } RenderCtx;
 
 /* --- Public API --- */
