@@ -106,6 +106,17 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
     }
   }
 
+  // after reading all travelers
+  char extra[256];
+  if (fgets(extra, sizeof(extra), file) && extra[0] != '\n' &&
+      extra[0] != '\0') {
+    printf("Error: file has more data than expected\n");
+    free(travelers->travelers);
+    fclose(file);
+    freeAll(graph);
+    return NULL;
+  }
+
   fclose(file);
   return graph;
 }
