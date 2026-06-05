@@ -6,14 +6,10 @@ Graph *createGraph(int numNodes) {
     printf("Error: failed to allocate graph\n");
     return NULL;
   }
-
   graph->num_nodes = numNodes;
-
-  // Initialize all adjacency list heads to NULL
   for (int i = 0; i < numNodes; i++) {
     graph->adj[i] = NULL;
   }
-
   return graph;
 }
 
@@ -23,10 +19,9 @@ void addEdge(Graph *graph, int src, int dst, int weight) {
     printf("Error: failed to allocate edge node\n");
     return;
   }
-
   newNode->id = dst;
   newNode->weight = weight;
-  newNode->next = graph->adj[src]; // prepend to list
+  newNode->next = graph->adj[src];
   graph->adj[src] = newNode;
 }
 
@@ -37,9 +32,14 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
     return NULL;
   }
 
-  // Read first line from input file → N (nodes), M (edges)
+  char buf[256];
+  int offset;
   int N, M;
-  if (fscanf(file, "%d %d", &N, &M) != 2) {
+
+  // Read first line: N (nodes), M (edges)
+  if (!fgets(buf, sizeof(buf), file) ||
+      sscanf(buf, "%d %d%n", &N, &M, &offset) != 2 ||
+      (buf[offset] != '\n' && buf[offset] != '\0')) {
     printf("Invalid file format on first line\nYou should provide nodes number "
            "& edges number");
     fclose(file);
@@ -49,33 +49,35 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
   Graph *graph = createGraph(N);
   if (!graph) {
     printf("Error creating the graph");
+    fclose(file);
     return NULL;
   }
 
-  // read adjacency list
+  // Read adjacency list
   for (int i = 0; i < M; i++) {
     int src, dst, weight;
-
-    if (fscanf(file, "%d %d %d", &src, &dst, &weight) != 3) {
+    if (!fgets(buf, sizeof(buf), file) ||
+        sscanf(buf, "%d %d %d%n", &src, &dst, &weight, &offset) != 3 ||
+        (buf[offset] != '\n' && buf[offset] != '\0')) {
       printf("Error: invalid edge format at edge %d\n", i + 1);
       fclose(file);
       freeAll(graph);
       return NULL;
     }
-
-    // Validate node indices are within range to avoid issues
     if (src < 0 || src >= N || dst < 0 || dst >= N) {
       printf("Error: node index out of range at edge %d\n", i + 1);
       fclose(file);
       freeAll(graph);
       return NULL;
     }
-
     addEdge(graph, src, dst, weight);
   }
 
+  // Read traveler count
   int count;
-  if (fscanf(file, "%d", &count) != 1) {
+  if (!fgets(buf, sizeof(buf), file) ||
+      sscanf(buf, "%d%n", &count, &offset) != 1 ||
+      (buf[offset] != '\n' && buf[offset] != '\0')) {
     printf("Error: missing traveler count\n");
     fclose(file);
     freeAll(graph);
@@ -92,8 +94,10 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
   travelers->count = count;
 
   for (int i = 0; i < count; i++) {
-    if (fscanf(file, "%d %d", &travelers->travelers[i].src,
-               &travelers->travelers[i].dst) != 2) {
+    if (!fgets(buf, sizeof(buf), file) ||
+        sscanf(buf, "%d %d%n", &travelers->travelers[i].src,
+               &travelers->travelers[i].dst, &offset) != 2 ||
+        (buf[offset] != '\n' && buf[offset] != '\0')) {
       printf("Error: invalid traveler format at traveler %d\n", i + 1);
       free(travelers->travelers);
       fclose(file);
@@ -101,7 +105,6 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
       return NULL;
     }
   }
-  // ------------------------------------------------
 
   fclose(file);
   return graph;
@@ -110,7 +113,6 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
 void freeAll(Graph *graph) {
   if (!graph)
     return;
-
   for (int i = 0; i < graph->num_nodes; i++) {
     Node *curr = graph->adj[i];
     while (curr != NULL) {
@@ -119,6 +121,5 @@ void freeAll(Graph *graph) {
       free(tmp);
     }
   }
-
   free(graph);
 }
