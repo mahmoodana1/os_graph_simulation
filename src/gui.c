@@ -486,15 +486,12 @@ void DrawArrivedBanner(void) {
     DrawRectangle(0, by + bh - 2, bw, 2, C_SUCCESS_LINE);
 
     int x1 = bw / 2 - MeasureText("ALL TRAVELERS ARRIVED", 30) / 2,
-        x2 =
-            bw / 2 -
-            MeasureText("Simulation Complete  —  Press RESTART to replay", 13) /
-                2;
+        x2 = bw / 2 - MeasureText("Simulation Complete", 13) / 2;
     for (int d = 7; d >= 1; d--)
         DrawText("ALL TRAVELERS ARRIVED", x1 + d / 2, by + 18 + d / 2, 30,
                  (Color){0, 200, 110, (unsigned char)((35 + 30 * alpha) / d)});
     DrawText("ALL TRAVELERS ARRIVED", x1, by + 18, 30, C_SUCCESS_TXT);
-    DrawText("Simulation Complete  —  Press RESTART to replay", x2, by + 62, 13,
+    DrawText("Simulation Complete", x2, by + 62, 13,
              (Color){100, 200, 155, 210});
 }
 
@@ -670,29 +667,6 @@ void DrawPanel(RenderCtx *ctx) {
             }
         }
     }
-    y += BTN_H + 9;
-
-    if (DrawButton((Rectangle){p_bx, (float)y, p_bw, BTN_H}, "RESTART",
-                   C_BTN_IDLE, C_BTN_HOVER)) {
-        for (int i = 0; i < ctx->numCars; i++) {
-            Car *c = &ctx->cars[i];
-            if (c->path) {
-                free(c->path);
-                c->path = NULL;
-            }
-            c->path_idx = 0;
-            c->path_len = 0;
-            c->t = 0.0f;
-            c->timer = 0.0f;
-            c->notified = false;
-            c->state = CAR_IDLE;
-            c->path_str[0] = '\0';
-        }
-        memset(ctx->toasts, 0, sizeof(ctx->toasts));
-        ctx->all_arrived = false;
-        ctx->running = false;
-        ctx->paused = false;
-    }
     y += BTN_H + 14;
 
     DrawRectangle(PANEL_X + 12, y, PANEL_W - 24, 1, C_PANEL_SEP);
@@ -782,6 +756,7 @@ void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node,
         off += snprintf(c->path_str, sizeof(c->path_str), "%d", current_node);
     snprintf(c->path_str + off, sizeof(c->path_str) - (size_t)off, "->%d",
              next_node);
+
 }
 
 void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
@@ -815,9 +790,10 @@ void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
 
 void freeRenderer(RenderCtx *ctx) {
     if (ctx) {
-        for (int i = 0; i < NUM_STATION_TYPES; i++) {
+        for (int i = 0; i < NUM_STATION_TYPES; i++)
             UnloadTexture(ctx->stationTextures[i]);
-        }
+        for (int i = 0; i < ctx->numCars; i++)
+            if (ctx->cars[i].path) free(ctx->cars[i].path);
         free(ctx->positions);
         free(ctx->cars);
         free(ctx);

@@ -43,7 +43,6 @@ int main(int argc, char *argv[]) {
                                               travelers.travelers[i].dst);
 
             writeTravelerPathToSharedMemory(shm_ptr, i, result);
-
             exit(0);
         }
 
