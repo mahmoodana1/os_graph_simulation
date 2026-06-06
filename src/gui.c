@@ -167,6 +167,8 @@ RenderCtx *initGuiSetup(Graph *g, int num_travelers) {
         c->state = CAR_IDLE;
         c->hop_mode = true;
         c->path_str[0] = '\0';
+        c->hops_done = 0;
+        c->total_hops = 0;
     }
 
     return ctx;
@@ -607,12 +609,12 @@ void DrawPanel(RenderCtx *ctx) {
         DrawText(st, PANEL_X + PANEL_W - 14 - sw, ry, 10, stc);
 
         float prog = 0.0f;
-        if (c->path_len > 1) {
-            prog = ((float)c->path_idx + c->t) / (float)(c->path_len - 1);
-            if (prog > 1.0f)
-                prog = 1.0f;
-        } else if (c->state == CAR_ARRIVED) {
+        if (c->state == CAR_ARRIVED) {
             prog = 1.0f;
+        } else if (c->total_hops > 0) {
+            prog = ((float)(c->hops_done - 1) + c->t) / (float)c->total_hops;
+            if (prog < 0.0f) prog = 0.0f;
+            if (prog > 1.0f) prog = 1.0f;
         }
 
         DrawRectangle((int)bx, ry + 16, (int)bw, 4, (Color){18, 30, 58, 255});
@@ -640,22 +642,22 @@ void DrawPanel(RenderCtx *ctx) {
     DrawRectangle(PANEL_X + 12, y, PANEL_W - 24, 1, C_PANEL_SEP);
     y += 14;
 
-    float p_bx = (float)(PANEL_X + BTN_MX);
-    float p_bw = (float)(PANEL_W - BTN_MX * 2);
+    if (!ctx->all_arrived) {
+        float p_bx = (float)(PANEL_X + BTN_MX);
+        float p_bw = (float)(PANEL_W - BTN_MX * 2);
 
-    const char *play_lbl = (!ctx->running && !ctx->paused) ? "PLAY"
-                           : ctx->running                  ? "PAUSE"
-                                                           : "RESUME";
-    Color play_bg = (!ctx->running && !ctx->paused) ? C_BTN_PLAY
-                    : ctx->running                  ? C_BTN_IDLE
-                                                    : C_BTN_PLAY;
-    Color play_hov = (!ctx->running && !ctx->paused) ? C_BTN_PLAY_HOV
-                     : ctx->running                  ? C_BTN_HOVER
-                                                     : C_BTN_PLAY_HOV;
+        const char *play_lbl = (!ctx->running && !ctx->paused) ? "PLAY"
+                               : ctx->running                  ? "PAUSE"
+                                                               : "RESUME";
+        Color play_bg = (!ctx->running && !ctx->paused) ? C_BTN_PLAY
+                        : ctx->running                  ? C_BTN_IDLE
+                                                        : C_BTN_PLAY;
+        Color play_hov = (!ctx->running && !ctx->paused) ? C_BTN_PLAY_HOV
+                         : ctx->running                  ? C_BTN_HOVER
+                                                         : C_BTN_PLAY_HOV;
 
-    if (DrawButton((Rectangle){p_bx, (float)y, p_bw, BTN_H}, play_lbl, play_bg,
-                   play_hov)) {
-        if (!ctx->all_arrived) {
+        if (DrawButton((Rectangle){p_bx, (float)y, p_bw, BTN_H}, play_lbl,
+                       play_bg, play_hov)) {
             if (!ctx->running && !ctx->paused)
                 ctx->running = true;
             else if (ctx->running) {
@@ -666,8 +668,8 @@ void DrawPanel(RenderCtx *ctx) {
                 ctx->paused = false;
             }
         }
+        y += BTN_H + 14;
     }
-    y += BTN_H + 14;
 
     DrawRectangle(PANEL_X + 12, y, PANEL_W - 24, 1, C_PANEL_SEP);
     y += 10;
@@ -718,7 +720,7 @@ void RenderFrame(RenderCtx *ctx, Graph *g, float dt) {
 }
 
 void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node,
-                         int next_node) {
+                         int next_node, int total_hops) {
     if (!ctx || traveler_idx < 0 || traveler_idx >= ctx->numCars)
         return;
     Car *c = &ctx->cars[traveler_idx];
@@ -750,6 +752,10 @@ void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node,
     c->state = CAR_MOVING;
     c->x = ctx->positions[current_node].x;
     c->y = ctx->positions[current_node].y;
+
+    if (c->hops_done == 0)
+        c->total_hops = total_hops;
+    c->hops_done++;
 
     int off = (int)strlen(c->path_str);
     if (off == 0)

@@ -41,6 +41,7 @@ typedef struct {
     int *path;
     int path_len;
     int path_idx;
+    int hops_done;
     int total_hops;
     float timer;
     CarState state;
@@ -75,6 +76,6 @@ RenderCtx *initGuiSetup(Graph *g, int num_travelers);
 void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
                                       int count);
 void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node,
-                         int next_node);
+                         int next_node, int total_hops);
 void freeRenderer(RenderCtx *ctx);
 #endif

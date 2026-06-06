@@ -24,9 +24,8 @@ int main(int argc, char *argv[]) {
     TravelerList travelers;
     Graph *g = loadGraph(argv[1], &travelers);
 
-    if (!g) {
+    if (!g)
         return EXIT_FAILURE;
-    }
 
     pid_t pids[travelers.count];
 
@@ -58,12 +57,13 @@ int main(int argc, char *argv[]) {
         EndDrawing();
     }
 
-    for (int i = 0; i < travelers.count; i++) {
+    for (int i = 0; i < travelers.count; i++)
         waitpid(pids[i], NULL, 0);
-    }
 
-    cleanup(0);
+    CloseWindow();
     freeRenderer(ctx);
+    freeAll(g);
+    detachShm();
 
     return EXIT_SUCCESS;
 }
