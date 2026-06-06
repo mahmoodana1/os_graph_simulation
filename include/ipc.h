@@ -23,5 +23,8 @@ void createShm(const int travelers_count);
 void initTravelerMsg(TravelerMsg *msg, const int taraveler_count);
 void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
                                      int traveler_index, PathResult result);
+void readTravelerMsgFromSharedMemory(TravelerMsg *shared_mem,
+                                     int traveler_index, int *current_node,
+                                     int *next_node);
 
 #endif

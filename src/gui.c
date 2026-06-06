@@ -756,36 +756,6 @@ void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node,
         off += snprintf(c->path_str, sizeof(c->path_str), "%d", current_node);
     snprintf(c->path_str + off, sizeof(c->path_str) - (size_t)off, "->%d",
              next_node);
-
-}
-
-void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
-                                      int count) {
-    for (int i = 0; i < count; i++) {
-
-        if (ctx->cars[i].state == CAR_IDLE ||
-            ctx->cars[i].state == CAR_NODE_WAIT) {
-            if (sem_trywait(&shared_mem[i].sem_ready_to_read) == 0) {
-
-                int pid = shared_mem[i].pid;
-                int curr = shared_mem[i].current_node;
-                int next = shared_mem[i].next_node;
-
-                if (next == -1) {
-                    printf("[PID=%d] arrived at node %d | DESTINATION\n", pid,
-                           curr);
-                    printf("[PID=%d] finished\n", pid);
-                } else {
-                    printf("[PID=%d] arrived at node %d | next node: %d\n", pid,
-                           curr, next);
-                }
-
-                fflush(stdout);
-                ApplyTravelerUpdate(ctx, i, curr, next);
-                sem_post(&shared_mem[i].sem_ready_to_write);
-            }
-        }
-    }
 }
 
 void freeRenderer(RenderCtx *ctx) {
@@ -793,7 +763,8 @@ void freeRenderer(RenderCtx *ctx) {
         for (int i = 0; i < NUM_STATION_TYPES; i++)
             UnloadTexture(ctx->stationTextures[i]);
         for (int i = 0; i < ctx->numCars; i++)
-            if (ctx->cars[i].path) free(ctx->cars[i].path);
+            if (ctx->cars[i].path)
+                free(ctx->cars[i].path);
         free(ctx->positions);
         free(ctx->cars);
         free(ctx);
