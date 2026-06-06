@@ -59,6 +59,9 @@ make milestone3
 # Compile the Milestone 4 target
 make milestone4
 
+# Compile the Milestone 5 target
+make milestone5
+
 ```
 # **2. Execute the Program**
 Run the compiled binary by passing your input file as a command-line argument:
@@ -98,4 +101,32 @@ The parent process:
 
 ### Signal Based Lifecycle
 The `startGui` function was extended to accept the child PIDs. As each car reaches its destination (`CAR_ARRIVED`), the parent sends `SIGTERM` to the corresponding child, terminating it cleanly. After the GUI window closes, any remaining children are also reaped via `waitpid` — no zombie processes.
+
+### milestone 5 execution
+```
+./sim data/input.txt
+```
+
+## Milestone 5
+
+### What Changed from Milestone 4
+
+#### Dijkstra Moved into Child Processes
+In Milestone 4, the **parent** computed every traveler's shortest path before forking. In Milestone 5, that work was moved **inside each child process** — every forked child independently calls `solveDijkstra()` for its own traveler and owns the result entirely.
+
+#### Shared Memory Channel (IPC)
+Instead of the parent holding all path data, each child now communicates its path back to the parent/GUI **one hop at a time** through a shared memory segment:
+- `shmget` / `shmat` allocate a segment of `N × sizeof(TravelerMsg)` (one slot per traveler).
+- Each `TravelerMsg` carries `pid`, `current_node`, `next_node`, and `total_hops`.
+- The GUI reads these fields and calls `ApplyTravelerUpdate()` to advance the matching car on screen.
+
+#### Producer–Consumer Synchronisation with Semaphores
+Two **unnamed POSIX semaphores** (`pshared = 1`) per traveler slot enforce a strict one-message-at-a-time handoff:
+
+Each traveler slot has two semaphores. `sem_ready_to_write` starts at 1, meaning the slot is free and the child can write immediately. `sem_ready_to_read` starts at 0, meaning there's nothing to read yet. Once the child writes a hop and signals `sem_ready_to_read`, the GUI picks it up and signals `sem_ready_to_write` back, so the child can write the next one.
+
+The child loops over every node in the path, calling `sem_wait(write) → write → sem_post(read)`. The GUI calls `sem_trywait(read) → consume → sem_post(write)` each frame, only when the car is `CAR_IDLE` or `CAR_NODE_WAIT`.
+
+#### Children Exit Cleanly on Their Own
+Milestone 4 children called `pause()` and were killed by the parent via `SIGTERM`. Milestone 5 children exit naturally after posting their last hop (`next_node = -1`), no signals needed for lifecycle management.
 

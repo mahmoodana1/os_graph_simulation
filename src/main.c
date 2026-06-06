@@ -24,43 +24,46 @@ int main(int argc, char *argv[]) {
     TravelerList travelers;
     Graph *g = loadGraph(argv[1], &travelers);
 
-    if (!g) {
+    if (!g)
         return EXIT_FAILURE;
-    }
 
     pid_t pids[travelers.count];
-    int gui_paths[travelers.count][64];
-    int paths[travelers.count];
 
     createShm(travelers.count);
     initTravelerMsg(shm_ptr, travelers.count);
 
     // calculate path for each traveler
     for (int i = 0; i < travelers.count; i++) {
-        paths[i] = BuildDijkstraPath(g, travelers.travelers[i].src,
-                                     travelers.travelers[i].dst, gui_paths[i]);
-
         pid_t pid = fork();
 
         if (pid == 0) {
+            shm_ptr[i].pid = getpid();
             PathResult result = solveDijkstra(g, travelers.travelers[i].src,
                                               travelers.travelers[i].dst);
 
             writeTravelerPathToSharedMemory(shm_ptr, i, result);
-
             exit(0);
         }
 
         pids[i] = pid;
     }
 
-    startGui(g, gui_paths, paths, travelers.count);
+    RenderCtx *ctx = initGuiSetup(g, travelers.count);
 
-    for (int i = 0; i < travelers.count; i++) {
-        waitpid(pids[i], NULL, 0);
+    while (!WindowShouldClose()) {
+        readTravelerPathFromSharedMemory(ctx, shm_ptr, travelers.count);
+        BeginDrawing();
+        RenderFrame(ctx, g, GetFrameTime());
+        EndDrawing();
     }
 
-    cleanup(0);
+    for (int i = 0; i < travelers.count; i++)
+        waitpid(pids[i], NULL, 0);
+
+    CloseWindow();
+    freeRenderer(ctx);
+    freeAll(g);
+    detachShm();
 
     return EXIT_SUCCESS;
 }
