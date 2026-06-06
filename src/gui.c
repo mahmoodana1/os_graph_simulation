@@ -821,25 +821,30 @@ void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node, int
 
 void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem, int count) {
     for (int i = 0; i < count; i++) {
-        if (ctx->cars[i].state == CAR_IDLE) {
+
+        if (ctx->cars[i].state == CAR_IDLE || ctx->cars[i].state == CAR_NODE_WAIT) {
             if (sem_trywait(&shared_mem[i].sem_ready_to_read) == 0) {
-                int pid = shared_mem[i].pid;
+
+                int pid  = shared_mem[i].pid;
                 int curr = shared_mem[i].current_node;
                 int next = shared_mem[i].next_node;
+
                 if (next == -1) {
                     printf("[PID=%d] arrived at node %d | DESTINATION\n", pid, curr);
                     printf("[PID=%d] finished\n", pid);
                 } else {
                     printf("[PID=%d] arrived at node %d | next node: %d\n", pid, curr, next);
                 }
+
                 fflush(stdout);
                 ApplyTravelerUpdate(ctx, i, curr, next);
                 sem_post(&shared_mem[i].sem_ready_to_write);
-
             }
         }
     }
 }
+
+
 
 void FreeRenderer(RenderCtx *ctx) {
     if (ctx) {
