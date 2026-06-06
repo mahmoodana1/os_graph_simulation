@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
         pid_t pid = fork();
 
         if (pid == 0) {
+            shm_ptr[i].pid = getpid();
             PathResult result = solveDijkstra(g, travelers.travelers[i].src,
                                               travelers.travelers[i].dst);
 
