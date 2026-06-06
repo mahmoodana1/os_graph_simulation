@@ -29,17 +29,12 @@ int main(int argc, char *argv[]) {
     }
 
     pid_t pids[travelers.count];
-    int gui_paths[travelers.count][64];
-    int paths[travelers.count];
 
     createShm(travelers.count);
     initTravelerMsg(shm_ptr, travelers.count);
 
     // calculate path for each traveler
     for (int i = 0; i < travelers.count; i++) {
-        paths[i] = BuildDijkstraPath(g, travelers.travelers[i].src,
-                                     travelers.travelers[i].dst, gui_paths[i]);
-
         pid_t pid = fork();
 
         if (pid == 0) {
@@ -69,6 +64,7 @@ int main(int argc, char *argv[]) {
     }
 
     cleanup(0);
+    freeRenderer(ctx);
 
     return EXIT_SUCCESS;
 }

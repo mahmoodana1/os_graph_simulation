@@ -26,7 +26,6 @@ typedef struct {
     bool active;
 } Toast;
 
-
 void DrawWeightBadge(Vector2 mid, int w, bool on_path);
 
 /* --- Car State Machine --- */
@@ -73,7 +72,9 @@ void DrawArrowAt(Vector2 pos, float ca, float sa, float sz, Color col);
 void DrawCarShape(float cx, float cy, float ca, float sa, float sz, Color col);
 void DrawBackground(void);
 RenderCtx *initGuiSetup(Graph *g, int num_travelers);
-void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem, int count);
-void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node, int next_node);
-
+void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
+                                      int count);
+void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node,
+                         int next_node);
+void freeRenderer(RenderCtx *ctx);
 #endif
