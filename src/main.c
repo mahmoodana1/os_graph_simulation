@@ -54,7 +54,14 @@ int main(int argc, char *argv[]) {
         pids[i] = pid;
     }
 
-    startGui(g, gui_paths, paths, travelers.count);
+    RenderCtx *ctx = initGuiSetup(g, travelers.count);
+
+    while (!WindowShouldClose()) {
+        readTravelerPathFromSharedMemory(ctx, shm_ptr, travelers.count);
+        BeginDrawing();
+        RenderFrame(ctx, g, GetFrameTime());
+        EndDrawing();
+    }
 
     for (int i = 0; i < travelers.count; i++) {
         waitpid(pids[i], NULL, 0);

@@ -97,6 +97,7 @@ static void DrawToasts(RenderCtx *ctx) {
             continue;
         Toast *t = &ctx->toasts[i];
 
+
         float elapsed = TOAST_LIFETIME - t->timer;
         float raw = 1.0f;
         if (elapsed < TOAST_FADE_IN)
@@ -138,8 +139,8 @@ static void DrawToasts(RenderCtx *ctx) {
     }
 }
 
-/* ── startGui ───────────────────────────────────────────────────────────── */
-void startGui(Graph *g, int paths[][64], int *path_lens, int num_travelers) {
+/* ── initGuiSetup ──────────────────────────────────────────────────────── */
+RenderCtx *initGuiSetup(Graph *g, int num_travelers) {
     static const Color traveler_colors[] = {
         {0, 180, 255, 255},  {255, 80, 130, 255}, {255, 160, 30, 255},
         {140, 80, 255, 255}, {0, 220, 160, 255},  {255, 220, 50, 255},
@@ -160,36 +161,17 @@ void startGui(Graph *g, int paths[][64], int *path_lens, int num_travelers) {
         Car *c = &ctx->cars[i];
         c->id = i;
         c->color = traveler_colors[i % 9];
-        c->path = malloc(path_lens[i] * sizeof(int));
-        memcpy(c->path, paths[i], path_lens[i] * sizeof(int));
-        c->path_len = path_lens[i];
+        c->path = NULL;
+        c->path_len = 0;
         c->path_idx = 0;
         c->t = 0.0f;
         c->speed = 1.1f;
-        c->state = (path_lens[i] > 1) ? CAR_MOVING : CAR_ARRIVED;
-        c->notified = (c->state == CAR_ARRIVED); /* trivial path — skip toast */
-        if (path_lens[i] > 0) {
-            c->x = positions[c->path[0]].x;
-            c->y = positions[c->path[0]].y;
-        }
-
-        int off = 0;
-        for (int j = 0; j < path_lens[i] && off < (int)sizeof(c->path_str) - 8;
-             j++)
-            off += snprintf(c->path_str + off, sizeof(c->path_str) - off,
-                            j ? "->%d" : "%d", paths[i][j]);
+        c->state = CAR_IDLE;
+        c->hop_mode = true;
+        c->path_str[0] = '\0';
     }
 
-    while (!WindowShouldClose()) {
-        BeginDrawing();
-        RenderFrame(ctx, g, GetFrameTime());
-        EndDrawing();
-    }
-
-    for (int i = 0; i < num_travelers; i++)
-        free(ctx->cars[i].path);
-    FreeRenderer(ctx);
-    CloseWindow();
+    return ctx;
 }
 
 void DrawWeightBadge(Vector2 mid, int w, bool on_path) {
@@ -695,15 +677,17 @@ void DrawPanel(RenderCtx *ctx) {
                    C_BTN_IDLE, C_BTN_HOVER)) {
         for (int i = 0; i < ctx->numCars; i++) {
             Car *c = &ctx->cars[i];
+            if (c->path) {
+                free(c->path);
+                c->path = NULL;
+            }
             c->path_idx = 0;
+            c->path_len = 0;
             c->t = 0.0f;
             c->timer = 0.0f;
             c->notified = false;
-            c->state = (c->path && c->path_len > 1) ? CAR_MOVING : CAR_ARRIVED;
-            if (c->path && c->path_len > 0) {
-                c->x = ctx->positions[c->path[0]].x;
-                c->y = ctx->positions[c->path[0]].y;
-            }
+            c->state = CAR_IDLE;
+            c->path_str[0] = '\0';
         }
         memset(ctx->toasts, 0, sizeof(ctx->toasts));
         ctx->all_arrived = false;
@@ -758,6 +742,54 @@ void RenderFrame(RenderCtx *ctx, Graph *g, float dt) {
     DrawToasts(ctx);
     DrawText(TextFormat("FPS %d", GetFPS()), GRAPH_W - 58, WIN_H - 18, 10,
              C_FPS_TXT);
+}
+
+void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node, int next_node) {
+    if (!ctx || traveler_idx < 0 || traveler_idx >= ctx->numCars) return;
+    Car *c = &ctx->cars[traveler_idx];
+
+    if (next_node == -1) {
+        c->x     = ctx->positions[current_node].x;
+        c->y     = ctx->positions[current_node].y;
+        c->state = CAR_ARRIVED;
+        if (c->path) { free(c->path); c->path = NULL; }
+        c->path_len = 0;
+        c->path_idx = 0;
+        c->t        = 0.0f;
+        return;
+    }
+
+    if (c->path) free(c->path);
+    c->path = malloc(2 * sizeof(int));
+    if (!c->path) return;
+    c->path[0]  = current_node;
+    c->path[1]  = next_node;
+    c->path_len = 2;
+    c->path_idx = 0;
+    c->t        = 0.0f;
+    c->state    = CAR_MOVING;
+    c->x        = ctx->positions[current_node].x;
+    c->y        = ctx->positions[current_node].y;
+
+    int off = (int)strlen(c->path_str);
+    if (off == 0)
+        off += snprintf(c->path_str, sizeof(c->path_str), "%d", current_node);
+    snprintf(c->path_str + off, sizeof(c->path_str) - (size_t)off, "->%d", next_node);
+}
+
+void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem, int count) {
+    for (int i = 0; i < count; i++) {
+        Car *c = &ctx->cars[i];
+        if (c->state == CAR_IDLE || c->state == CAR_NODE_WAIT) {
+            if (sem_trywait(&shared_mem[i].sem_ready_to_read) == 0) {
+                int cur = shared_mem[i].current_node;
+                int nxt = shared_mem[i].next_node;
+                sem_post(&shared_mem[i].sem_ready_to_write);
+                printf("[IPC] Traveler %d: node %d -> %d\n", i + 1, cur, nxt);
+                ApplyTravelerUpdate(ctx, i, cur, nxt);
+            }
+        }
+    }
 }
 
 void FreeRenderer(RenderCtx *ctx) {

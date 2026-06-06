@@ -2,6 +2,7 @@
 #define GUI_H
 
 #include "graph.h"
+#include "ipc.h"
 #include "utils.h"
 #include <sys/types.h>
 
@@ -25,10 +26,7 @@ typedef struct {
     bool active;
 } Toast;
 
-/* --- High-level GUI Entry Point --- */
-/* paths[i] is the node-ID array for traveler i, path_lens[i] is its length */
-// void startGui(Graph* g, int paths[][64], int* path_lens, int num_travelers);
-void startGui(Graph *g, int paths[][64], int *path_lens, int num_travelers);
+
 void DrawWeightBadge(Vector2 mid, int w, bool on_path);
 
 /* --- Car State Machine --- */
@@ -51,6 +49,7 @@ typedef struct {
     char path_str[128];
     float last_ca, last_sa; /* last heading, held across non-moving states */
     bool notified;          /* true once the arrival toast has fired */
+    bool hop_mode;
 } Car;
 
 /* --- Main Renderer Context --- */
@@ -73,5 +72,8 @@ void FreeRenderer(RenderCtx *ctx);
 void DrawArrowAt(Vector2 pos, float ca, float sa, float sz, Color col);
 void DrawCarShape(float cx, float cy, float ca, float sa, float sz, Color col);
 void DrawBackground(void);
+RenderCtx *initGuiSetup(Graph *g, int num_travelers);
+void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem, int count);
+void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node, int next_node);
 
 #endif
