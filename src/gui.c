@@ -370,18 +370,8 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
 
     if (car->state == CAR_NODE_WAIT) {
         car->timer -= dt;
-        if (car->timer <= 0.0f) {
-            car->path_idx++;
-            if (car->path_idx >= car->path_len - 1) {
-                car->state = CAR_ARRIVED;
-                int last = car->path[car->path_len - 1];
-                car->x = ctx->positions[last].x;
-                car->y = ctx->positions[last].y;
-            } else {
-                car->state = CAR_MOVING;
-                car->t = 0.0f;
-            }
-        }
+        if (car->timer <= 0.0f)
+            car->state = CAR_IDLE;
         return;
     }
 
@@ -395,7 +385,7 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
         car->y = ctx->positions[ni].y;
         car->t = 1.0f;
         car->state = CAR_NODE_WAIT;
-        car->timer = 0.10f;
+        car->timer = 1.0f;
     } else {
         Vector2 c1, c2;
         EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
