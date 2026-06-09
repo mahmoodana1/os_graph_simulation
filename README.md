@@ -130,3 +130,56 @@ The child loops over every node in the path, calling `sem_wait(write) → write 
 #### Children Exit Cleanly on Their Own
 Milestone 4 children called `pause()` and were killed by the parent via `SIGTERM`. Milestone 5 children exit naturally after posting their last hop (`next_node = -1`), no signals needed for lifecycle management.
 
+## Milestone 6 — Intersection Mutual Exclusion
+
+### IPC Mechanism
+
+The project uses SysV shared memory with `shmget` and `shmat`.
+
+The shared memory segment layout is:
+
+`[ sem_t node_locks[MAX_NODES] ][ TravelerMsg travelers[N] ]`
+
+`node_locks` is stored at the beginning of the segment.  
+`shm_ptr`, which points to the `TravelerMsg` array, is placed after the semaphore array using this offset:
+
+`sizeof(sem_t) * MAX_NODES`
+
+### Synchronization mechanism
+
+The project uses POSIX unnamed semaphores, `sem_t`, with `pshared = 1`.
+
+Each node has its own binary semaphore initialized to 1.  
+This means every graph node acts like a protected intersection that only one traveler can enter at a time.
+
+For each hop, the child process follows this locking protocol:
+
+1. Set `queued_at_node = node` to tell the GUI that the traveler is waiting.
+2. Call `sem_wait(&node_locks[node])` to lock the node.
+3. Set `queued_at_node = -1` after entering the node.
+4. Write the hop data into shared memory.
+5. Signal the GUI using `sem_ready_to_read`.
+6. Sleep for 1 second while holding the node.
+7. Call `sem_post(&node_locks[node])` to release the node.
+
+### GUI state
+
+The GUI detects queued travelers by checking `queued_at_node` every frame.
+
+When a traveler is waiting outside a busy node, the GUI shows it as `CAR_QUEUED_OUTSIDE`, using a dimmed car with an orange ring outside the contested node.
+
+The side panel displays `QUEUED` in orange.
+
+### Entry order
+
+The entry order is random.
+
+POSIX `sem_wait` does not guarantee fairness.  
+When several child processes are waiting for the same node, the operating system scheduler decides which process enters first.
+
+### No starvation
+
+Each traveler releases the node after exactly 1 second.
+
+With `N` travelers competing for the same node, every queued traveler should eventually enter after the previous travelers release the semaphore.
+
