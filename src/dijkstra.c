@@ -112,6 +112,8 @@ PathResult solveDijkstra(Graph *g, int start, int end) {
  */
 int BuildDijkstraPath(Graph *g, int start, int end, int *out_path) {
     int n = g->num_nodes;
+    if (n > 64)
+        return 0;
     int dist[64], visited[64], parent[64];
     for (int i = 0; i < n; i++) {
         dist[i] = INF;

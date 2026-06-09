@@ -18,11 +18,12 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    signal(SIGINT, cleanup); // to cleanup after closing the window
-    signal(SIGTERM, cleanup);
-
     TravelerList travelers;
+    travelers.travelers = NULL;
     Graph *g = loadGraph(argv[1], &travelers);
+
+    signal(SIGINT, cleanup);
+    signal(SIGTERM, cleanup);
 
     if (!g)
         return EXIT_FAILURE;
@@ -63,6 +64,7 @@ int main(int argc, char *argv[]) {
     CloseWindow();
     freeRenderer(ctx);
     freeAll(g);
+    free(travelers.travelers);
     detachShm();
 
     return EXIT_SUCCESS;

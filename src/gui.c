@@ -154,6 +154,10 @@ RenderCtx *initGuiSetup(Graph *g, int num_travelers) {
     InitWindow(GUI_WIN_W, GUI_WIN_H, "OS Graph Simulation");
     SetTargetFPS(60);
     RenderCtx *ctx = InitRenderer(g->num_nodes, positions, num_travelers);
+    if (!ctx) {
+        CloseWindow();
+        return NULL;
+    }
 
     for (int i = 0; i < num_travelers; i++) {
         Car *c = &ctx->cars[i];
@@ -193,7 +197,7 @@ void DrawWeightBadge(Vector2 mid, int w, bool on_path) {
         (Rectangle){badge.x - 1.5f, badge.y - 1.5f, bw + 3.0f, bh + 3.0f}, 0.6f,
         8, (Color){255, 255, 255, 200});
     DrawRectangleRounded(badge, 0.6f, 8, badgeColor);
-    DrawText(buf, (int)(mid.x - tw / 2), (int)(mid.y - fontSize / 2), fontSize,
+    DrawText(buf, (int)(mid.x - tw / 2.0f), (int)(mid.y - fontSize / 2.0f), fontSize,
              WHITE);
 }
 
@@ -512,10 +516,18 @@ void DrawPlayOverlay(RenderCtx *ctx) {
 
 RenderCtx *InitRenderer(int num_nodes, Vector2 *positions, int num_cars) {
     RenderCtx *ctx = calloc(1, sizeof *ctx);
+    if (!ctx)
+        return NULL;
     ctx->node_count = num_nodes;
     ctx->numCars = num_cars;
     ctx->positions = malloc(num_nodes * sizeof(Vector2));
     ctx->cars = calloc(num_cars, sizeof(Car));
+    if (!ctx->positions || !ctx->cars) {
+        free(ctx->positions);
+        free(ctx->cars);
+        free(ctx);
+        return NULL;
+    }
     for (int i = 0; i < num_nodes; i++)
         ctx->positions[i] = positions[i];
 
