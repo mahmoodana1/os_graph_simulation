@@ -8,22 +8,29 @@
 
 #define MAX_TRAVELERS 8
 
-TravelerMsg *shm_ptr = NULL;
 int shm_id = -1;
 int shm_travelers = 0;
 pid_t main_pid;
+void *raw_shm = NULL;
+sem_t *node_locks = NULL;
+TravelerMsg *travelers_shm_ptr = NULL;
 
 void detachShm() {
-    if (!shm_ptr || shm_id == -1)
+    if (!raw_shm || shm_id == -1)
         return;
     if (getpid() == main_pid) {
+        for (int n = 0; n < MAX_NODES; n++)
+            sem_destroy(&node_locks[n]);
         for (int i = 0; i < shm_travelers; i++) {
-            sem_destroy(&shm_ptr[i].sem_ready_to_read);
-            sem_destroy(&shm_ptr[i].sem_ready_to_write);
+            sem_destroy(&travelers_shm_ptr[i].sem_ready_to_read);
+            sem_destroy(&travelers_shm_ptr[i].sem_ready_to_write);
         }
     }
-    shmdt(shm_ptr);
-    shm_ptr = NULL;
+
+    shmdt(raw_shm);
+    raw_shm = NULL;
+    travelers_shm_ptr = NULL;
+    node_locks = NULL;
     if (getpid() == main_pid)
         shmctl(shm_id, IPC_RMID, NULL);
 }
@@ -37,6 +44,8 @@ void cleanup(int sig) {
 void createShm(const int travelers_count) {
     main_pid = getpid();
     shm_travelers = travelers_count;
+    size_t locks_size = sizeof(sem_t) * MAX_NODES;
+    size_t SHM_SIZE = locks_size + sizeof(TravelerMsg) * travelers_count;
 
     key_t key = ftok("/tmp", 'y');
     if (key == -1) {
@@ -44,27 +53,39 @@ void createShm(const int travelers_count) {
         exit(EXIT_FAILURE);
     }
 
-    size_t SHM_SIZE = sizeof(TravelerMsg) * travelers_count;
-
     shm_id = shmget(key, SHM_SIZE, IPC_CREAT | IPC_EXCL | 0600);
     if (shm_id == -1) {
         perror("shmget failed");
         exit(EXIT_FAILURE);
     }
 
-    shm_ptr = (TravelerMsg *)shmat(shm_id, NULL, 0);
-    if (shm_ptr == (void *)-1) {
+    raw_shm = shmat(shm_id, NULL, 0);
+    if (raw_shm == (void *)-1) {
         perror("shmat failed");
         shmctl(shm_id, IPC_RMID, NULL);
         exit(EXIT_FAILURE);
     }
+
+    node_locks = (sem_t *)raw_shm;
+    travelers_shm_ptr = (TravelerMsg *)((char *)raw_shm + locks_size);
 }
 
-void initTravelerMsg(TravelerMsg *shared_mem, const int travelers_count) {
+void initSemaphores(TravelerMsg *shared_mem, const int travelers_count) {
+    // sem_init for node locks
+    for (int n = 0; n < MAX_NODES; n++) {
+        if (sem_init(&node_locks[n], 1, 1) !=
+            0) { // pshared=1, initial value=1 (free)
+            perror("sem_init node_lock failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // sem_init for traveler messages
     for (int i = 0; i < travelers_count; i++) {
         shared_mem[i].pid = -1;
         shared_mem[i].current_node = -1;
         shared_mem[i].next_node = -1;
+        shared_mem[i].queued_at_node = -1;
 
         // Initial value = 0 (Red Light). The mailbox is currently empty.
         if (sem_init(&shared_mem[i].sem_ready_to_read, 1, 0) != 0) {
@@ -83,16 +104,29 @@ void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
                                      int traveler_index, PathResult result) {
     shared_mem[traveler_index].total_hops = result.length - 1;
     for (int j = 0; j < result.length; j++) {
-        sem_wait(&shared_mem[traveler_index].sem_ready_to_write);
-        shared_mem[traveler_index].pid = getpid();
-        shared_mem[traveler_index].current_node = result.nodes[j];
+        int node = result.nodes[j];
+        shared_mem[traveler_index].queued_at_node = node;
 
-        if (j + 1 < result.length) {
-            shared_mem[traveler_index].next_node = result.nodes[j + 1];
-        } else {
-            shared_mem[traveler_index].next_node = -1;
-        }
+        // critical section, wait for the node to be free, then enter it
+        sem_wait(&node_locks[node]);
+
+        // after we are in the node, we can set queued_at_node to -1 to indicate
+        // we are no longer waiting
+        shared_mem[traveler_index].queued_at_node = -1;
+        sem_wait(&shared_mem[traveler_index].sem_ready_to_write);
+
+        // Write hop data
+        shared_mem[traveler_index].pid = getpid();
+        shared_mem[traveler_index].current_node = node;
+        shared_mem[traveler_index].next_node =
+            (j + 1 < result.length) ? result.nodes[j + 1] : -1;
+
+        // signal to the gui that there is new data ready to animate
         sem_post(&shared_mem[traveler_index].sem_ready_to_read);
+        // hold the intersectoin for 1 second before releasing
+        sleep(1);
+        // Release the intersection (critical section exit)
+        sem_post(&node_locks[node]);
     }
 }
 

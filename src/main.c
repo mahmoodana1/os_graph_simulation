@@ -31,18 +31,16 @@ int main(int argc, char *argv[]) {
     pid_t pids[travelers.count];
 
     createShm(travelers.count);
-    initTravelerMsg(shm_ptr, travelers.count);
+    initSemaphores(travelers_shm_ptr, travelers.count);
 
-    // calculate path for each traveler
     for (int i = 0; i < travelers.count; i++) {
         pid_t pid = fork();
 
         if (pid == 0) {
-            shm_ptr[i].pid = getpid();
+            travelers_shm_ptr[i].pid = getpid();
             PathResult result = solveDijkstra(g, travelers.travelers[i].src,
                                               travelers.travelers[i].dst);
-
-            writeTravelerPathToSharedMemory(shm_ptr, i, result);
+            writeTravelerPathToSharedMemory(travelers_shm_ptr, i, result);
             exit(0);
         }
 
@@ -52,7 +50,7 @@ int main(int argc, char *argv[]) {
     RenderCtx *ctx = initGuiSetup(g, travelers.count);
 
     while (!WindowShouldClose()) {
-        readTravelerPathFromSharedMemory(ctx, shm_ptr, travelers.count);
+        readTravelerPathFromSharedMemory(ctx, travelers_shm_ptr, travelers.count);
         BeginDrawing();
         RenderFrame(ctx, g, GetFrameTime());
         EndDrawing();
