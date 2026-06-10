@@ -10,13 +10,16 @@ typedef struct {
     int current_node;
     int next_node;
     int total_hops;
+    volatile int queued_at_node; // its set to target node while queued, and set
+                                 // to -1 when not queued
     sem_t sem_ready_to_read;
     sem_t sem_ready_to_write;
 } TravelerMsg;
 
 extern TravelerMsg *shm_ptr;
-extern int shm_id;
+extern int shm_id; // shared memory ID for cleanup
 extern pid_t main_pid;
+extern sem_t *node_locks; // points to sem_t[MAX_NODES] at start of SHM
 
 void cleanup(int);
 void detachShm();
