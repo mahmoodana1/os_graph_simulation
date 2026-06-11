@@ -373,8 +373,11 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
 
   if (car->state == CAR_NODE_WAIT) {
     car->timer -= dt;
-    if (car->timer <= 0.0f)
+    if (car->timer <= 0.0f) {
       car->state = CAR_IDLE;
+      // NOW signal the child it can write the next hop
+      sem_post(&travelers_shm_ptr[car->id].sem_ready_to_write);
+    }
     return;
   }
 

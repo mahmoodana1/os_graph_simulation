@@ -93,7 +93,7 @@ void initSemaphores(TravelerMsg *shared_mem, const int travelers_count) {
       exit(EXIT_FAILURE);
     }
     // Initial value = 1 (Green Light). There is 1 available empty slot.
-    if (sem_init(&shared_mem[i].sem_ready_to_write, 1, 1) != 0) {
+    if (sem_init(&shared_mem[i].sem_ready_to_write, 1, 0) != 0) {
       perror("sem_init sem_ready_to_write failed");
       exit(EXIT_FAILURE);
     }
@@ -109,6 +109,9 @@ void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
 
     // critical section, wait for the node to be free, then enter it
     sem_wait(&node_locks[node]);
+
+    printf("[LOCK] PID=%d ACQUIRED node %d\n", getpid(), node);
+    fflush(stdout);
 
     // after we are in the node, we can set queued_at_node to -1 to indicate
     // we are no longer waiting
@@ -126,6 +129,8 @@ void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
     // hold the intersectoin for 1 second before releasing
     sleep(1);
     // Release the intersection (critical section exit)
+    printf("[LOCK] PID=%d RELEASING node %d\n", getpid(), node);
+    fflush(stdout);
     sem_post(&node_locks[node]);
   }
 }
@@ -148,8 +153,19 @@ void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
         int row = (i / 3 % 3) - 1;
         car->x = ctx->positions[qnode].x + 18.0f * col;
         car->y = ctx->positions[qnode].y + 18.0f * row;
+        printf("[GUI] car %d queued at node %d\n", i, qnode);
+      } else if (car->state == CAR_QUEUED_OUTSIDE) {
+        // queued_at_node flipped to -1: the child acquired the lock and is
+        // about to post sem_ready_to_read.  Drop back to IDLE so the hop-
+        // consumption block below can fire this frame (or the next one).
+        car->state = CAR_IDLE;
+        car->queued_node = -1;
       }
     }
+
+    // only consume hop data when simulation is running
+    if (!ctx->running)
+      continue;
 
     // Only consume a new hop when the car has fully finished the last one
     if (car->state == CAR_IDLE) {
@@ -169,7 +185,6 @@ void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
 
         car->queued_node = -1;
         ApplyTravelerUpdate(ctx, i, curr, next, shared_mem[i].total_hops);
-        sem_post(&shared_mem[i].sem_ready_to_write);
       }
     }
   }
