@@ -49,13 +49,13 @@ typedef struct {
   int path_idx;
   int hops_done;
   int total_hops;
-  int queued_node; /* node this car is waiting to enter (= -1 if not queued)
+  int queued_node; /* node this car is waiting to enter (= -1 if not queued)*/
   float timer;
   CarState state;
   Color color;
   char path_str[128];
   float last_ca, last_sa; /* last heading, held across non-moving states */
-  bool notified;   /* true once the arrival toast has fired */
+  bool notified;          /* true once the arrival toast has fired */
   bool hop_mode;
 } Car;
 
