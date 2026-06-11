@@ -367,7 +367,8 @@ static int GetEdgeWeight(Graph *g, int from, int to) {
 }
 
 void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
-  if (car->state == CAR_ARRIVED || car->state == CAR_IDLE || !car->path)
+  if (car->state == CAR_ARRIVED || car->state == CAR_IDLE ||
+      car->state == CAR_QUEUED_OUTSIDE || !car->path)
     return;
 
   if (car->state == CAR_NODE_WAIT) {
