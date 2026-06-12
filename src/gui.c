@@ -367,19 +367,13 @@ static int GetEdgeWeight(Graph *g, int from, int to) {
 }
 
 void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
+  // Stationary states do not advance. CAR_NODE_WAIT is now a pure hold
+  // state -- the child's sleep(1) governs dwell duration, and the next hop
+  // publish flips us back to CAR_MOVING via ApplyTravelerUpdate.
   if (car->state == CAR_ARRIVED || car->state == CAR_IDLE ||
-      car->state == CAR_QUEUED_OUTSIDE || !car->path)
+      car->state == CAR_QUEUED_OUTSIDE || car->state == CAR_NODE_WAIT ||
+      !car->path)
     return;
-
-  if (car->state == CAR_NODE_WAIT) {
-    car->timer -= dt;
-    if (car->timer <= 0.0f) {
-      car->state = CAR_IDLE;
-      // NOW signal the child it can write the next hop
-      sem_post(&travelers_shm_ptr[car->id].sem_ready_to_write);
-    }
-    return;
-  }
 
   int from = car->path[car->path_idx];
   int to = car->path[car->path_idx + 1];
@@ -391,7 +385,9 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
     car->y = ctx->positions[ni].y;
     car->t = 1.0f;
     car->state = CAR_NODE_WAIT;
-    car->timer = 1.0f;
+    // Tell the child the edge animation is complete; it can now sleep(1) and
+    // publish the next hop.
+    sem_post(&travelers_shm_ptr[car->id].sem_ready_to_write);
   } else {
     Vector2 c1, c2;
     EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
@@ -729,8 +725,10 @@ void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node,
   Car *c = &ctx->cars[traveler_idx];
 
   if (next_node == -1) {
-    c->x = ctx->positions[current_node].x;
-    c->y = ctx->positions[current_node].y;
+    if (current_node >= 0) {
+      c->x = ctx->positions[current_node].x;
+      c->y = ctx->positions[current_node].y;
+    }
     c->state = CAR_ARRIVED;
     if (c->path) {
       free(c->path);
