@@ -49,8 +49,7 @@ int main(int argc, char *argv[]) {
 
     RenderCtx *ctx = initGuiSetup(g, travelers.count);
 
-    // Seat each car at its source node so it doesn't flash at (0,0) before
-    // the first publish lands.
+    // seat cars at source nodes
     for (int i = 0; i < travelers.count; i++) {
         int src = travelers.travelers[i].src;
         if (src >= 0 && src < ctx->node_count) {
