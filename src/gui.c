@@ -369,35 +369,31 @@ static int GetEdgeWeight(Graph *g, int from, int to) {
 }
 
 void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
-    if (car->state == CAR_ARRIVED || car->state == CAR_IDLE || !car->path)
-        return;
+  if (car->state == CAR_ARRIVED || car->state == CAR_IDLE ||
+      car->state == CAR_QUEUED_OUTSIDE || car->state == CAR_NODE_WAIT ||
+      !car->path)
+    return;
 
-    if (car->state == CAR_NODE_WAIT) {
-        car->timer -= dt;
-        if (car->timer <= 0.0f)
-            car->state = CAR_IDLE;
-        return;
-    }
-
-    int from = car->path[car->path_idx];
-    int to = car->path[car->path_idx + 1];
-    int w = GetEdgeWeight(g, from, to);
-    car->t += (car->speed / (float)w) * dt;
-    if (car->t >= 1.0f) {
-        int ni = car->path[car->path_idx + 1];
-        car->x = ctx->positions[ni].x;
-        car->y = ctx->positions[ni].y;
-        car->t = 1.0f;
-        car->state = CAR_NODE_WAIT;
-        car->timer = 1.0f;
-    } else {
-        Vector2 c1, c2;
-        EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
-        Vector2 pos =
-            BezPt(ctx->positions[from], c1, c2, ctx->positions[to], car->t);
-        car->x = pos.x;
-        car->y = pos.y;
-    }
+  int from = car->path[car->path_idx];
+  int to = car->path[car->path_idx + 1];
+  int w = GetEdgeWeight(g, from, to);
+  car->t += (car->speed / (float)w) * dt;
+  if (car->t >= 1.0f) {
+    int ni = car->path[car->path_idx + 1];
+    car->x = ctx->positions[ni].x;
+    car->y = ctx->positions[ni].y;
+    car->t = 1.0f;
+    car->state = CAR_NODE_WAIT;
+    // The child owns the dwell time via sleep(1); signal arrival immediately.
+    sem_post(&travelers_shm_ptr[car->id].sem_ready_to_write);
+  } else {
+    Vector2 c1, c2;
+    EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
+    Vector2 pos =
+        BezPt(ctx->positions[from], c1, c2, ctx->positions[to], car->t);
+    car->x = pos.x;
+    car->y = pos.y;
+  }
 }
 
 void UpdateCars(RenderCtx *ctx, Graph *g, float dt) {
@@ -727,18 +723,15 @@ void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node,
         return;
     Car *c = &ctx->cars[traveler_idx];
 
-    if (next_node == -1) {
-        c->x = ctx->positions[current_node].x;
-        c->y = ctx->positions[current_node].y;
-        c->state = CAR_ARRIVED;
-        if (c->path) {
-            free(c->path);
-            c->path = NULL;
-        }
-        c->path_len = 0;
-        c->path_idx = 0;
-        c->t = 0.0f;
-        return;
+  if (next_node == -1) {
+    if (current_node >= 0) {
+      c->x = ctx->positions[current_node].x;
+      c->y = ctx->positions[current_node].y;
+    }
+    c->state = CAR_ARRIVED;
+    if (c->path) {
+      free(c->path);
+      c->path = NULL;
     }
 
     if (c->path)

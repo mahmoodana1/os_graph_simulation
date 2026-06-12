@@ -102,59 +102,91 @@ void initSemaphores(TravelerMsg *shared_mem, const int travelers_count) {
 
 void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
                                      int traveler_index, PathResult result) {
-    shared_mem[traveler_index].total_hops = result.length - 1;
-    for (int j = 0; j < result.length; j++) {
-        int node = result.nodes[j];
-        shared_mem[traveler_index].queued_at_node = node;
+  pid_t pid = getpid();
 
-        // critical section, wait for the node to be free, then enter it
-        sem_wait(&node_locks[node]);
+  // No path (e.g. directed graph has no 4->0 route): publish a synthetic
+  // arrival so the GUI marks the car ARRIVED instead of sitting in CAR_IDLE.
+  if (result.length <= 0) {
+    shared_mem[traveler_index].total_hops = 0;
+    sem_wait(&shared_mem[traveler_index].sem_ready_to_write);
+    shared_mem[traveler_index].pid = pid;
+    shared_mem[traveler_index].current_node = -1;
+    shared_mem[traveler_index].next_node = -1;
+    sem_post(&shared_mem[traveler_index].sem_ready_to_read);
+    return;
+  }
 
-        // after we are in the node, we can set queued_at_node to -1 to indicate
-        // we are no longer waiting
-        shared_mem[traveler_index].queued_at_node = -1;
-        sem_wait(&shared_mem[traveler_index].sem_ready_to_write);
+  shared_mem[traveler_index].total_hops = result.length - 1;
+  for (int j = 0; j < result.length; j++) {
+    int node = result.nodes[j];
+    shared_mem[traveler_index].queued_at_node = node;
 
-        // Write hop data
-        shared_mem[traveler_index].pid = getpid();
-        shared_mem[traveler_index].current_node = node;
-        shared_mem[traveler_index].next_node =
-            (j + 1 < result.length) ? result.nodes[j + 1] : -1;
+    sem_wait(&node_locks[node]);
+    printf("[LOCK] PID=%d ACQUIRED node %d\n", pid, node);
+    fflush(stdout);
 
-        // signal to the gui that there is new data ready to animate
-        sem_post(&shared_mem[traveler_index].sem_ready_to_read);
-        // hold the intersectoin for 1 second before releasing
-        sleep(1);
-        // Release the intersection (critical section exit)
-        sem_post(&node_locks[node]);
-    }
+    shared_mem[traveler_index].queued_at_node = -1;
+    sem_wait(&shared_mem[traveler_index].sem_ready_to_write);
+
+    // Dwell at the intersection while still holding its lock. Moved here from
+    // after the publish below (where it used to run in parallel with the GUI
+    // animating the next edge). Pairs with UpdateCar posting sem_ready_to_write
+    // the moment t >= 1.0 instead of running its own timer.
+    sleep(1);
+
+    shared_mem[traveler_index].pid = pid;
+    shared_mem[traveler_index].current_node = node;
+    shared_mem[traveler_index].next_node =
+        (j + 1 < result.length) ? result.nodes[j + 1] : -1;
+
+    sem_post(&shared_mem[traveler_index].sem_ready_to_read);
+
+    printf("[LOCK] PID=%d RELEASING node %d\n", pid, node);
+    fflush(stdout);
+    sem_post(&node_locks[node]);
+  }
 }
 
 void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
                                       int count) {
-    for (int i = 0; i < count; i++) {
+  for (int i = 0; i < count; i++) {
+    Car *car = &ctx->cars[i];
 
-        if (ctx->cars[i].state == CAR_IDLE) {
-            if (sem_trywait(&shared_mem[i].sem_ready_to_read) == 0) {
+    // Poll queued_at_node for cars that are idle or already queued outside
+    if (car->state == CAR_IDLE || car->state == CAR_QUEUED_OUTSIDE) {
+      int qnode = shared_mem[i].queued_at_node;
+      if (qnode != -1) {
+        car->state = CAR_QUEUED_OUTSIDE;
+        car->queued_node = qnode;
+        int col = (i % 3) - 1;
+        int row = (i / 3 % 3) - 1;
+        car->x = ctx->positions[qnode].x + 18.0f * col;
+        car->y = ctx->positions[qnode].y + 18.0f * row;
+        printf("[GUI] car %d queued at node %d\n", i, qnode);
+      } else if (car->state == CAR_QUEUED_OUTSIDE) {
+        car->state = CAR_IDLE;
+        car->queued_node = -1;
+      }
+    }
 
-                int pid = shared_mem[i].pid;
-                int curr = shared_mem[i].current_node;
-                int next = shared_mem[i].next_node;
+    if (!ctx->running)
+      continue;
 
-                if (next == -1) {
-                    printf("[PID=%d] arrived at node %d | DESTINATION\n", pid,
-                           curr);
-                    printf("[PID=%d] finished\n", pid);
-                } else {
-                    printf("[PID=%d] arrived at node %d | next node: %d\n", pid,
-                           curr, next);
-                }
+    // Consume a hop when the car is parked. CAR_NODE_WAIT is included because
+    // UpdateCar no longer counts down a float timer and so never flips the
+    // state back to CAR_IDLE on its own.
+    if (car->state == CAR_IDLE || car->state == CAR_NODE_WAIT) {
+      if (sem_trywait(&shared_mem[i].sem_ready_to_read) == 0) {
+        int pid = shared_mem[i].pid;
+        int curr = shared_mem[i].current_node;
+        int next = shared_mem[i].next_node;
 
-                fflush(stdout);
-                ApplyTravelerUpdate(ctx, i, curr, next,
-                                    shared_mem[i].total_hops);
-                sem_post(&shared_mem[i].sem_ready_to_write);
-            }
+        if (next == -1) {
+          printf("[PID=%d] arrived at node %d | DESTINATION\n", pid, curr);
+          printf("[PID=%d] finished\n", pid);
+        } else {
+          printf("[PID=%d] arrived at node %d | next node: %d\n", pid, curr,
+                 next);
         }
     }
 }
