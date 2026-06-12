@@ -733,6 +733,11 @@ void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node,
       free(c->path);
       c->path = NULL;
     }
+    c->path_len = 0;
+    c->path_idx = 0;
+    c->t = 0.0f;
+    return;
+  }
 
     if (c->path)
         free(c->path);

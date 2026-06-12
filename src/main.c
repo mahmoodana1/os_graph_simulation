@@ -49,6 +49,16 @@ int main(int argc, char *argv[]) {
 
     RenderCtx *ctx = initGuiSetup(g, travelers.count);
 
+    // Seat each car at its source node so it doesn't flash at (0,0) before
+    // the first publish lands.
+    for (int i = 0; i < travelers.count; i++) {
+        int src = travelers.travelers[i].src;
+        if (src >= 0 && src < ctx->node_count) {
+            ctx->cars[i].x = ctx->positions[src].x;
+            ctx->cars[i].y = ctx->positions[src].y;
+        }
+    }
+
     while (!WindowShouldClose()) {
         readTravelerPathFromSharedMemory(ctx, travelers_shm_ptr, travelers.count);
         BeginDrawing();

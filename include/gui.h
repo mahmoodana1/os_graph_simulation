@@ -29,7 +29,13 @@ typedef struct {
 void DrawWeightBadge(Vector2 mid, int w, bool on_path);
 
 /* --- Car State Machine --- */
-typedef enum { CAR_IDLE, CAR_MOVING, CAR_NODE_WAIT, CAR_ARRIVED } CarState;
+typedef enum {
+    CAR_IDLE,
+    CAR_MOVING,
+    CAR_NODE_WAIT,
+    CAR_QUEUED_OUTSIDE,
+    CAR_ARRIVED
+} CarState;
 
 typedef struct {
     float x, y;
@@ -50,6 +56,7 @@ typedef struct {
     float last_ca, last_sa; /* last heading, held across non-moving states */
     bool notified;          /* true once the arrival toast has fired */
     bool hop_mode;
+    int queued_node;        /* node the car is queued outside, or -1 */
 } Car;
 
 /* --- Main Renderer Context --- */
