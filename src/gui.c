@@ -391,7 +391,12 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
     car->y = ctx->positions[ni].y;
     car->t = 1.0f;
     car->state = CAR_NODE_WAIT;
+<<<<<<< Updated upstream
     car->timer = 1.0f;
+=======
+    // The child owns the dwell time via sleep(1); signal arrival immediately.
+    sem_post(&travelers_shm_ptr[car->id].sem_ready_to_write);
+>>>>>>> Stashed changes
   } else {
     Vector2 c1, c2;
     EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
