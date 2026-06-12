@@ -57,6 +57,9 @@
 #define TOAST_H 50.0f
 #define TOAST_GAP 8.0f
 
+#define SPINNER_DEG_PER_SEC 300.0f  /* rotation speed of the waiting indicator */
+#define SPINNER_ARC_DEG     80.0f   /* arc length of the bright segment */
+
 static float s_time = 0.0f;
 
 /* ── Toast helpers ──────────────────────────────────────────────────────── */
@@ -418,9 +421,22 @@ void UpdateCars(RenderCtx *ctx, Graph *g, float dt) {
     }
 }
 
+static void DrawWaitSpinner(float cx, float cy) {
+    float start = fmodf(s_time * SPINNER_DEG_PER_SEC, 360.0f);
+    float inner = CAR_SZ + 6.5f;
+    float outer = CAR_SZ + 11.0f;
+    /* dim track ring so the arc reads clearly */
+    DrawRing((Vector2){cx, cy}, inner, outer, 0.0f, 360.0f, 36,
+             (Color){255, 255, 255, 28});
+    /* bright white arc */
+    DrawRing((Vector2){cx, cy}, inner, outer, start,
+             start + SPINNER_ARC_DEG, 12, (Color){255, 255, 255, 220});
+}
+
 void DrawSingleCar(Car *car, RenderCtx *ctx) {
     if (car->state == CAR_IDLE)
         return;
+
     float cx = car->x, cy = car->y;
     float ca = car->last_ca, sa = car->last_sa;
     if (ca == 0.0f && sa == 0.0f) {
@@ -468,6 +484,8 @@ void DrawSingleCar(Car *car, RenderCtx *ctx) {
     }
     DrawCarShape(cx, cy, ca, sa, CAR_SZ, car->color);
     DrawCircleV((Vector2){cx, cy}, 2.2f, (Color){255, 255, 255, 190});
+    if (car->state == CAR_NODE_WAIT || car->state == CAR_QUEUED_OUTSIDE)
+        DrawWaitSpinner(cx, cy);
 }
 
 void DrawArrivedBanner(void) {
