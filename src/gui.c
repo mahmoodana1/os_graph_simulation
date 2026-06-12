@@ -57,6 +57,9 @@
 #define TOAST_H 50.0f
 #define TOAST_GAP 8.0f
 
+/* ~1.6 blinks/sec while a traveler is blocked waiting for its turn */
+#define WAIT_BLINK_SPEED 10.0f
+
 static float s_time = 0.0f;
 
 /* ── Toast helpers ──────────────────────────────────────────────────────── */
@@ -421,6 +424,12 @@ void UpdateCars(RenderCtx *ctx, Graph *g, float dt) {
 void DrawSingleCar(Car *car, RenderCtx *ctx) {
     if (car->state == CAR_IDLE)
         return;
+
+    /* Hide on the negative half-cycle while blocked waiting for another traveler */
+    if ((car->state == CAR_NODE_WAIT || car->state == CAR_QUEUED_OUTSIDE) &&
+        sinf(s_time * WAIT_BLINK_SPEED) < 0.0f)
+        return;
+
     float cx = car->x, cy = car->y;
     float ca = car->last_ca, sa = car->last_sa;
     if (ca == 0.0f && sa == 0.0f) {
