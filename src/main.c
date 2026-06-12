@@ -13,57 +13,64 @@
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        printf("Usage: %s <input_file>\n", argv[0]);
-        return EXIT_FAILURE;
+  if (argc < 2) {
+    printf("Usage: %s <input_file>\n", argv[0]);
+    return EXIT_FAILURE;
+  }
+
+  TravelerList travelers;
+  travelers.travelers = NULL;
+  Graph *g = loadGraph(argv[1], &travelers);
+
+  signal(SIGINT, cleanup);
+  signal(SIGTERM, cleanup);
+
+  if (!g)
+    return EXIT_FAILURE;
+
+  pid_t pids[travelers.count];
+
+  createShm(travelers.count);
+  initSemaphores(travelers_shm_ptr, travelers.count);
+
+  for (int i = 0; i < travelers.count; i++) {
+    pid_t pid = fork();
+
+    if (pid == 0) {
+      travelers_shm_ptr[i].pid = getpid();
+      PathResult result = solveDijkstra(g, travelers.travelers[i].src,
+                                        travelers.travelers[i].dst);
+      writeTravelerPathToSharedMemory(travelers_shm_ptr, i, result);
+      exit(0);
     }
 
-    TravelerList travelers;
-    travelers.travelers = NULL;
-    Graph *g = loadGraph(argv[1], &travelers);
+    pids[i] = pid;
+  }
 
-    signal(SIGINT, cleanup);
-    signal(SIGTERM, cleanup);
+  RenderCtx *ctx = initGuiSetup(g, travelers.count);
 
-    if (!g)
-        return EXIT_FAILURE;
+  bool sim_started = false;
+  while (!WindowShouldClose()) {
+    readTravelerPathFromSharedMemory(ctx, travelers_shm_ptr, travelers.count);
 
-    pid_t pids[travelers.count];
-
-    createShm(travelers.count);
-    initSemaphores(travelers_shm_ptr, travelers.count);
-
-    for (int i = 0; i < travelers.count; i++) {
-        pid_t pid = fork();
-
-        if (pid == 0) {
-            travelers_shm_ptr[i].pid = getpid();
-            PathResult result = solveDijkstra(g, travelers.travelers[i].src,
-                                              travelers.travelers[i].dst);
-            writeTravelerPathToSharedMemory(travelers_shm_ptr, i, result);
-            exit(0);
-        }
-
-        pids[i] = pid;
+    if (ctx->running && !sim_started) {
+      sim_started = true;
+      for (int i = 0; i < travelers.count; i++)
+        sem_post(&travelers_shm_ptr[i].sem_ready_to_write);
     }
 
-    RenderCtx *ctx = initGuiSetup(g, travelers.count);
+    BeginDrawing();
+    RenderFrame(ctx, g, GetFrameTime());
+    EndDrawing();
+  }
+  for (int i = 0; i < travelers.count; i++)
+    waitpid(pids[i], NULL, 0);
 
-    while (!WindowShouldClose()) {
-        readTravelerPathFromSharedMemory(ctx, travelers_shm_ptr, travelers.count);
-        BeginDrawing();
-        RenderFrame(ctx, g, GetFrameTime());
-        EndDrawing();
-    }
+  CloseWindow();
+  freeRenderer(ctx);
+  freeAll(g);
+  free(travelers.travelers);
+  detachShm();
 
-    for (int i = 0; i < travelers.count; i++)
-        waitpid(pids[i], NULL, 0);
-
-    CloseWindow();
-    freeRenderer(ctx);
-    freeAll(g);
-    free(travelers.travelers);
-    detachShm();
-
-    return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }
