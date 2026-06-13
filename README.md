@@ -48,7 +48,7 @@ Clean any previous build artifacts and compile the project using the Milestone 1
 make clean
 
 # Compile the Milestone 1 target
-make milestone1
+make dijkstra
 
 # Compile the Milestone 2 target
 make milestone2
@@ -90,6 +90,11 @@ Bash
 ./sim data/input.txt
 ```
 
+### milestone 5 execution
+```
+./sim data/input.txt
+```
+
 ### milestone 6 execution
 ```
 ./sim data/input.txt
@@ -109,11 +114,6 @@ The parent process:
 
 ### Signal Based Lifecycle
 The `startGui` function was extended to accept the child PIDs. As each car reaches its destination (`CAR_ARRIVED`), the parent sends `SIGTERM` to the corresponding child, terminating it cleanly. After the GUI window closes, any remaining children are also reaped via `waitpid` — no zombie processes.
-
-### milestone 5 execution
-```
-./sim data/input.txt
-```
 
 ## Milestone 5
 
