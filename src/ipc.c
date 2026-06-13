@@ -117,7 +117,7 @@ void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
 
     shared_mem[traveler_index].total_hops = result.length - 1;
 
-    // lock starting node
+    // lock starting node (car is parked at the start)
     int curr = result.nodes[0];
     shared_mem[traveler_index].queued_at_node = curr;
     sem_wait(&node_locks[curr]);
