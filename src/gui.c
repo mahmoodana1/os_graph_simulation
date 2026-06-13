@@ -371,22 +371,81 @@ static int GetEdgeWeight(Graph *g, int from, int to) {
     return 1;
 }
 
+/* Fraction of the edge at which a car claims the target node's lock. If the
+   lock is held by another car, ours freezes here and visually waits outside. */
+#define APPROACH_T 0.75f
+/* Per-slot pull-back along the edge so multiple cars queueing on the same
+   edge toward the same target don't overlap visually. */
+#define QUEUE_OFFSET 0.06f
+
 void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
   if (car->state == CAR_ARRIVED || car->state == CAR_IDLE ||
-      car->state == CAR_QUEUED_OUTSIDE || car->state == CAR_NODE_WAIT ||
-      !car->path)
+      car->state == CAR_NODE_WAIT || !car->path)
     return;
 
   int from = car->path[car->path_idx];
   int to = car->path[car->path_idx + 1];
+
+  /* Frozen outside a locked target: retry acquire each frame. */
+  if (car->state == CAR_QUEUED_OUTSIDE) {
+    if (sem_trywait(&node_locks[to]) == 0) {
+      car->target_locked = true;
+      car->queued_node = -1;
+      car->state = CAR_MOVING;
+      printf("[LOCK] car %d ACQUIRED node %d (was queued outside)\n",
+             car->id, to);
+      fflush(stdout);
+    }
+    return;
+  }
+
   int w = GetEdgeWeight(g, from, to);
   car->t += (car->speed / (float)w) * dt;
+
+  /* At approach distance, claim the target node. If already locked by another
+     car, freeze here (visually wait outside the node). */
+  if (!car->target_locked && car->t >= APPROACH_T) {
+    if (sem_trywait(&node_locks[to]) == 0) {
+      car->target_locked = true;
+      printf("[LOCK] car %d ACQUIRED node %d at approach\n", car->id, to);
+      fflush(stdout);
+    } else {
+      /* count cars already queued on the same edge toward the same target */
+      int slot = 0;
+      for (int k = 0; k < ctx->numCars; k++) {
+        Car *o = &ctx->cars[k];
+        if (o == car || o->state != CAR_QUEUED_OUTSIDE || !o->path)
+          continue;
+        if (o->queued_node == to && o->path_idx < o->path_len - 1 &&
+            o->path[o->path_idx] == from)
+          slot++;
+      }
+      float qt = APPROACH_T - slot * QUEUE_OFFSET;
+      if (qt < 0.0f)
+        qt = 0.0f;
+      car->t = qt;
+      car->state = CAR_QUEUED_OUTSIDE;
+      car->queued_node = to;
+      Vector2 c1, c2;
+      EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
+      Vector2 pos =
+          BezPt(ctx->positions[from], c1, c2, ctx->positions[to], car->t);
+      car->x = pos.x;
+      car->y = pos.y;
+      printf("[LOCK] car %d node %d locked; waiting outside (slot %d)\n",
+             car->id, to, slot);
+      fflush(stdout);
+      return;
+    }
+  }
+
   if (car->t >= 1.0f) {
     int ni = car->path[car->path_idx + 1];
     car->x = ctx->positions[ni].x;
     car->y = ctx->positions[ni].y;
     car->t = 1.0f;
     car->state = CAR_NODE_WAIT;
+    car->target_locked = false; /* reset for the next edge */
     // The child owns the dwell time via sleep(1); signal arrival immediately.
     sem_post(&travelers_shm_ptr[car->id].sem_ready_to_write);
   } else {
@@ -484,7 +543,7 @@ void DrawSingleCar(Car *car, RenderCtx *ctx) {
     }
     DrawCarShape(cx, cy, ca, sa, CAR_SZ, car->color);
     DrawCircleV((Vector2){cx, cy}, 2.2f, (Color){255, 255, 255, 190});
-    if (car->state == CAR_NODE_WAIT || car->state == CAR_QUEUED_OUTSIDE)
+    if (car->state == CAR_QUEUED_OUTSIDE)
         DrawWaitSpinner(cx, cy);
 }
 
@@ -768,6 +827,7 @@ void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node,
     c->path_idx = 0;
     c->t = 0.0f;
     c->state = CAR_MOVING;
+    c->target_locked = false;
     c->x = ctx->positions[current_node].x;
     c->y = ctx->positions[current_node].y;
 
