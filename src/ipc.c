@@ -170,7 +170,8 @@ void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
     Car *car = &ctx->cars[i];
 
     // poll queued_at_node, keep car at its current position
-    if (car->state == CAR_IDLE || car->state == CAR_QUEUED_OUTSIDE) {
+    if (car->state == CAR_IDLE || car->state == CAR_NODE_WAIT ||
+        car->state == CAR_QUEUED_OUTSIDE) {
       int qnode = shared_mem[i].queued_at_node;
       if (qnode != -1) {
         if (car->state != CAR_QUEUED_OUTSIDE) {
