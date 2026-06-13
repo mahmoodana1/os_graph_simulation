@@ -543,7 +543,7 @@ void DrawSingleCar(Car *car, RenderCtx *ctx) {
     }
     DrawCarShape(cx, cy, ca, sa, CAR_SZ, car->color);
     DrawCircleV((Vector2){cx, cy}, 2.2f, (Color){255, 255, 255, 190});
-    if (car->state == CAR_NODE_WAIT || car->state == CAR_QUEUED_OUTSIDE)
+    if (car->state == CAR_QUEUED_OUTSIDE)
         DrawWaitSpinner(cx, cy);
 }
 
@@ -827,6 +827,7 @@ void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node,
     c->path_idx = 0;
     c->t = 0.0f;
     c->state = CAR_MOVING;
+    c->target_locked = false;
     c->x = ctx->positions[current_node].x;
     c->y = ctx->positions[current_node].y;
 

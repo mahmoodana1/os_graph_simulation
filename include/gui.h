@@ -57,6 +57,7 @@ typedef struct {
     bool notified;          /* true once the arrival toast has fired */
     bool hop_mode;
     int queued_node;        /* node the car is queued outside, or -1 */
+    bool target_locked;     /* true once next node's lock is acquired (approach) */
 } Car;
 
 /* --- Main Renderer Context --- */
