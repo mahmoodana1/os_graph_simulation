@@ -796,7 +796,8 @@ void RenderFrame(RenderCtx *ctx, Graph *g, float dt) {
 
 void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node,
                          int next_node, int total_hops) {
-    if (!ctx || traveler_idx < 0 || traveler_idx >= ctx->numCars)
+    if (!ctx || traveler_idx < 0 || traveler_idx >= ctx->numCars ||
+        current_node >= ctx->node_count || next_node >= ctx->node_count)
         return;
     Car *c = &ctx->cars[traveler_idx];
 

@@ -66,10 +66,12 @@ int main(int argc, char *argv[]) {
     }
 
     for (int i = 0; i < travelers.count; i++)
+        kill(pids[i], SIGTERM);
+    for (int i = 0; i < travelers.count; i++)
         waitpid(pids[i], NULL, 0);
 
-    CloseWindow();
     freeRenderer(ctx);
+    CloseWindow();
     freeAll(g);
     free(travelers.travelers);
     detachShm();

@@ -39,7 +39,8 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
   // Read first line: N (nodes), M (edges)
   if (!fgets(buf, sizeof(buf), file) ||
       sscanf(buf, "%d %d%n", &N, &M, &offset) != 2 ||
-      (buf[offset] != '\n' && buf[offset] != '\0')) {
+      (buf[offset] != '\n' && buf[offset] != '\0') ||
+      N < 1 || N > MAX_NODES || M < 0) {
     printf("Invalid file format on first line\nYou should provide nodes number "
            "& edges number");
     fclose(file);
@@ -64,8 +65,8 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
       freeAll(graph);
       return NULL;
     }
-    if (src < 0 || src >= N || dst < 0 || dst >= N) {
-      printf("Error: node index out of range at edge %d\n", i + 1);
+    if (src < 0 || src >= N || dst < 0 || dst >= N || weight <= 0) {
+      printf("Error: invalid edge at edge %d (node range or weight<=0)\n", i + 1);
       fclose(file);
       freeAll(graph);
       return NULL;
@@ -77,8 +78,8 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
   int count;
   if (!fgets(buf, sizeof(buf), file) ||
       sscanf(buf, "%d%n", &count, &offset) != 1 ||
-      (buf[offset] != '\n' && buf[offset] != '\0')) {
-    printf("Error: missing traveler count\n");
+      (buf[offset] != '\n' && buf[offset] != '\0') || count < 1) {
+    printf("Error: missing or invalid traveler count\n");
     fclose(file);
     freeAll(graph);
     return NULL;
@@ -97,8 +98,10 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
     if (!fgets(buf, sizeof(buf), file) ||
         sscanf(buf, "%d %d%n", &travelers->travelers[i].src,
                &travelers->travelers[i].dst, &offset) != 2 ||
-        (buf[offset] != '\n' && buf[offset] != '\0')) {
-      printf("Error: invalid traveler format at traveler %d\n", i + 1);
+        (buf[offset] != '\n' && buf[offset] != '\0') ||
+        travelers->travelers[i].src < 0 || travelers->travelers[i].src >= N ||
+        travelers->travelers[i].dst < 0 || travelers->travelers[i].dst >= N) {
+      printf("Error: invalid traveler at traveler %d\n", i + 1);
       free(travelers->travelers);
       fclose(file);
       freeAll(graph);
