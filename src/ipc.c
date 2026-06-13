@@ -125,34 +125,36 @@ void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
     printf("[LOCK] PID=%d ACQUIRED node %d (start)\n", pid, curr);
     fflush(stdout);
 
-    // hand-over-hand: lock dest before publish, release src after
+    // consume initial sem_ready_to_write so future waits gate on real arrivals
+    sem_wait(&shared_mem[traveler_index].sem_ready_to_write);
+
+    // Lock lifecycle is split: child releases curr the moment it departs; GUI
+    // acquires next at approach distance (and freezes the car outside if next
+    // is held by another traveler).
     for (int j = 0; j < result.length - 1; j++) {
         int next = result.nodes[j + 1];
 
-        shared_mem[traveler_index].queued_at_node = next;
-        sem_wait(&node_locks[next]);
-        shared_mem[traveler_index].queued_at_node = -1;
-        printf("[LOCK] PID=%d ACQUIRED node %d\n", pid, next);
-        fflush(stdout);
-
-        // wait for GUI then dwell at current node
-        sem_wait(&shared_mem[traveler_index].sem_ready_to_write);
+        // dwell at curr while parked (lock still held)
         sleep(1);
 
+        // leaving curr: release its lock the moment the car departs
+        printf("[LOCK] PID=%d RELEASING node %d\n", pid, curr);
+        fflush(stdout);
+        sem_post(&node_locks[curr]);
+
+        // publish move; GUI moves the car and acquires next at APPROACH_T
         shared_mem[traveler_index].pid = pid;
         shared_mem[traveler_index].current_node = curr;
         shared_mem[traveler_index].next_node = next;
         sem_post(&shared_mem[traveler_index].sem_ready_to_read);
 
-        printf("[LOCK] PID=%d RELEASING node %d\n", pid, curr);
-        fflush(stdout);
-        sem_post(&node_locks[curr]);
+        // wait for GUI to signal visual arrival at next
+        sem_wait(&shared_mem[traveler_index].sem_ready_to_write);
 
         curr = next;
     }
 
-    // final arrival publish
-    sem_wait(&shared_mem[traveler_index].sem_ready_to_write);
+    // final arrival publish — car is parked at destination, lock held
     sleep(1);
     shared_mem[traveler_index].pid = pid;
     shared_mem[traveler_index].current_node = curr;
@@ -168,22 +170,6 @@ void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
                                       int count) {
   for (int i = 0; i < count; i++) {
     Car *car = &ctx->cars[i];
-
-    // poll queued_at_node, keep car at its current position
-    if (car->state == CAR_IDLE || car->state == CAR_NODE_WAIT ||
-        car->state == CAR_QUEUED_OUTSIDE) {
-      int qnode = shared_mem[i].queued_at_node;
-      if (qnode != -1) {
-        if (car->state != CAR_QUEUED_OUTSIDE) {
-          printf("[GUI] car %d queued (target node %d)\n", i, qnode);
-        }
-        car->state = CAR_QUEUED_OUTSIDE;
-        car->queued_node = qnode;
-      } else if (car->state == CAR_QUEUED_OUTSIDE) {
-        car->state = CAR_IDLE;
-        car->queued_node = -1;
-      }
-    }
 
     if (!ctx->running)
       continue;
