@@ -55,6 +55,11 @@ void createShm(const int travelers_count) {
 
     shm_id = shmget(key, SHM_SIZE, IPC_CREAT | IPC_EXCL | 0600);
     if (shm_id == -1) {
+        int stale = shmget(key, 0, 0600);
+        if (stale != -1) shmctl(stale, IPC_RMID, NULL);
+        shm_id = shmget(key, SHM_SIZE, IPC_CREAT | IPC_EXCL | 0600);
+    }
+    if (shm_id == -1) {
         perror("shmget failed");
         exit(EXIT_FAILURE);
     }
