@@ -2,6 +2,7 @@
 #include "../include/graph.h"
 #include "../include/gui.h"
 #include "../include/ipc.h"
+#include "../include/scheduler.h"
 #include <signal.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -13,14 +14,16 @@
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        printf("Usage: %s <input_file>\n", argv[0]);
+    const char *input_path = NULL;
+    if (parse_args(argc, argv, &input_path) != 0)
         return EXIT_FAILURE;
-    }
+
+    printf("[SCHED] %s\n", scheduler_name());
+    fflush(stdout);
 
     TravelerList travelers;
     travelers.travelers = NULL;
-    Graph *g = loadGraph(argv[1], &travelers);
+    Graph *g = loadGraph(input_path, &travelers);
 
     signal(SIGINT, cleanup);
     signal(SIGTERM, cleanup);
