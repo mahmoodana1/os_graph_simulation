@@ -65,6 +65,9 @@ make milestone5
 # Compile the Milestone 6 target
 make milestone6
 
+# Compile the Milestone 7 target
+make milestone7
+
 ```
 # **2. Execute the Program**
 Run the compiled binary by passing your input file as a command-line argument:
@@ -98,6 +101,13 @@ Bash
 ### milestone 6 execution
 ```
 ./sim data/input.txt
+```
+
+### milestone 7 execution
+```
+./sim -schd fcfs data/input.txt
+./sim -schd sjf  data/input.txt
+./sim data/input.txt              # no flag = defaults to FCFS
 ```
 
 ## Milestone 4
