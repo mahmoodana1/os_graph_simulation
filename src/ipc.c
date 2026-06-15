@@ -6,8 +6,6 @@
 #include <sys/shm.h>
 #include <unistd.h>
 
-#define MAX_TRAVELERS 8
-
 int shm_id = -1;
 int shm_travelers = 0;
 pid_t main_pid;

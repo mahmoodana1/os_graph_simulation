@@ -1,4 +1,5 @@
 #include "../include/gui.h"
+#include "../include/scheduler.h"
 #include <math.h>
 #include <raymath.h>
 #include <stdio.h>
@@ -378,6 +379,31 @@ static int GetEdgeWeight(Graph *g, int from, int to) {
    edge toward the same target don't overlap visually. */
 #define QUEUE_OFFSET 0.06f
 
+static int next_queue_tick(void) {
+    static int tick = 0;
+    return tick++;
+}
+
+static int collect_cars_queued_for(RenderCtx *ctx, int target_node,
+                                   Car **out) {
+    int count = 0;
+    for (int i = 0; i < ctx->numCars && count < MAX_TRAVELERS; i++) {
+        Car *o = &ctx->cars[i];
+        if (o->state == CAR_QUEUED_OUTSIDE && o->queued_node == target_node)
+            out[count++] = o;
+    }
+    return count;
+}
+
+static bool is_scheduler_winner(Car *car, int target_node, RenderCtx *ctx,
+                                Graph *g) {
+    Car *contenders[MAX_TRAVELERS];
+    int count = collect_cars_queued_for(ctx, target_node, contenders);
+    if (count == 0) return false;
+    int winner_idx = pick_winner(contenders, count, target_node, g);
+    return winner_idx >= 0 && contenders[winner_idx] == car;
+}
+
 void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
   if (car->state == CAR_ARRIVED || car->state == CAR_IDLE ||
       car->state == CAR_NODE_WAIT || !car->path)
@@ -386,16 +412,20 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
   int from = car->path[car->path_idx];
   int to = car->path[car->path_idx + 1];
 
-  /* Frozen outside a locked target: retry acquire each frame. */
+  /* Frozen outside a locked target: only the scheduler-chosen winner among
+     queued cars at this node attempts the lock this frame. */
   if (car->state == CAR_QUEUED_OUTSIDE) {
-    if (sem_trywait(&node_locks[to]) == 0) {
-      car->target_locked = true;
-      car->queued_node = -1;
-      car->state = CAR_MOVING;
-      printf("[LOCK] car %d ACQUIRED node %d (was queued outside)\n",
-             car->id, to);
-      fflush(stdout);
-    }
+    if (!is_scheduler_winner(car, to, ctx, g))
+      return;
+    if (sem_trywait(&node_locks[to]) != 0)
+      return;
+    car->target_locked = true;
+    car->queued_node = -1;
+    car->queued_since = -1;
+    car->state = CAR_MOVING;
+    printf("[LOCK] car %d ACQUIRED node %d (sched=%s)\n",
+           car->id, to, scheduler_name());
+    fflush(stdout);
     return;
   }
 
@@ -426,6 +456,7 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
       car->t = qt;
       car->state = CAR_QUEUED_OUTSIDE;
       car->queued_node = to;
+      car->queued_since = next_queue_tick();
       Vector2 c1, c2;
       EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
       Vector2 pos =

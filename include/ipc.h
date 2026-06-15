@@ -5,6 +5,8 @@
 #include <semaphore.h>
 #include <sys/types.h>
 
+#define MAX_TRAVELERS 8
+
 typedef struct {
     pid_t pid;
     int current_node;
