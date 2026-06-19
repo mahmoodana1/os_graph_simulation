@@ -133,8 +133,8 @@ int path_remaining_cost(Car *car, Graph *g) {
     int fromNode = car->path[i];
     int toNode = car->path[i + 1];
 
-    for (Node *node = g->adj[fromNode] n != NULL; n = n->next) {
-      if (node->id == to) {
+    for (Node *node = g->adj[fromNode]; node != NULL; node = node->next) {
+      if (node->id == toNode) {
         sum += node->weight;
         break;
       }
