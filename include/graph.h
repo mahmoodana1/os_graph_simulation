@@ -7,14 +7,14 @@
 
 // node for adjacency list
 typedef struct Node {
-  int id;
-  int weight;
-  struct Node *next;
+    int id;
+    int weight;
+    struct Node *next;
 } Node;
 
 typedef struct {
-  Node *adj[MAX_NODES];
-  int num_nodes;
+    Node *adj[MAX_NODES];
+    int num_nodes;
 } Graph;
 
 // load data from file and create graph

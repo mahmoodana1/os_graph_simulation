@@ -21,25 +21,25 @@
 
 /* --- Toast Notification --- */
 typedef struct {
-  char text[32]; /* "Traveler X" */
-  Color color;
-  float timer; /* counts down from TOAST_LIFETIME to 0 */
-  bool active;
+    char text[32]; /* "Traveler X" */
+    Color color;
+    float timer; /* counts down from TOAST_LIFETIME to 0 */
+    bool active;
 } Toast;
 
 void DrawWeightBadge(Vector2 mid, int w, bool on_path);
 
 /* --- Main Renderer Context --- */
 typedef struct {
-  Vector2 *positions;
-  int node_count;
-  Car *cars;
-  int numCars;
-  bool paused;
-  bool running;
-  bool all_arrived;
-  Texture2D stationTextures[NUM_STATION_TYPES];
-  Toast toasts[MAX_TOASTS];
+    Vector2 *positions;
+    int node_count;
+    Car *cars;
+    int numCars;
+    bool paused;
+    bool running;
+    bool all_arrived;
+    Texture2D stationTextures[NUM_STATION_TYPES];
+    Toast toasts[MAX_TOASTS];
 } RenderCtx;
 
 /* --- Public API --- */
