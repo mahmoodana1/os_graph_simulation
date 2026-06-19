@@ -39,8 +39,8 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
   // Read first line: N (nodes), M (edges)
   if (!fgets(buf, sizeof(buf), file) ||
       sscanf(buf, "%d %d%n", &N, &M, &offset) != 2 ||
-      (buf[offset] != '\n' && buf[offset] != '\0') ||
-      N < 1 || N > MAX_NODES || M < 0) {
+      (buf[offset] != '\n' && buf[offset] != '\0') || N < 1 || N > MAX_NODES ||
+      M < 0) {
     printf("Invalid file format on first line\nYou should provide nodes number "
            "& edges number");
     fclose(file);
@@ -66,7 +66,8 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
       return NULL;
     }
     if (src < 0 || src >= N || dst < 0 || dst >= N || weight <= 0) {
-      printf("Error: invalid edge at edge %d (node range or weight<=0)\n", i + 1);
+      printf("Error: invalid edge at edge %d (node range or weight<=0)\n",
+             i + 1);
       fclose(file);
       freeAll(graph);
       return NULL;
@@ -122,6 +123,25 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
 
   fclose(file);
   return graph;
+}
+
+int path_remaining_cost(Car *car, Graph *g) {
+  int sum = 0;
+
+  for (int i = car->path_idx; i < car->path_len - 1; i++) {
+
+    int fromNode = car->path[i];
+    int toNode = car->path[i + 1];
+
+    for (Node *node = g->adj[fromNode] n != NULL; n = n->next) {
+      if (node->id == to) {
+        sum += node->weight;
+        break;
+      }
+    }
+  }
+
+  return sum;
 }
 
 void freeAll(Graph *graph) {
