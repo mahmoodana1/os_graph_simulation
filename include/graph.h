@@ -2,9 +2,9 @@
 #define GRAPH_H
 
 #define MAX_NODES 15
+#include "car.h"
 #include "utils.h"
 
-struct Car;
 // node for adjacency list
 typedef struct Node {
   int id;
