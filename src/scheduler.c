@@ -21,7 +21,9 @@ int fcfs_pick(Car **q, int n) {
     int best = 0;
 
     for (int i = 1; i < n; i++) {
-        if (q[i]->queued_since < q[best]->queued_since)
+        if (q[i]->queued_since < q[best]->queued_since ||
+            (q[i]->queued_since == q[best]->queued_since &&
+             q[i]->id < q[best]->id))
             best = i;
     }
 
