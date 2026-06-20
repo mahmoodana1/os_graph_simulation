@@ -18,7 +18,14 @@ int fcfs_pick(Car **q, int n) {
     if (n <= 0)
         return -1;
 
-    return 0;
+    int best = 0;
+
+    for (int i = 1; i < n; i++) {
+        if (q[i]->queued_since < q[best]->queued_since)
+            best = i;
+    }
+
+    return best;
 }
 
 int sjf_pick(Car **q, int n, Graph *g) {
