@@ -33,7 +33,20 @@ int fcfs_pick(Car **q, int n) {
 int sjf_pick(Car **q, int n, Graph *g) {
     if (n <= 0)
         return -1;
-    return 0;
+
+    int best = 0;
+    int best_cost = path_remaining_cost(q[0], g);
+
+    for (int i = 1; i < n; i++) {
+        int cost = path_remaining_cost(q[i], g);
+
+        if (cost < best_cost) {
+            best = i;
+            best_cost = cost;
+        }
+    }
+
+    return best;
 }
 
 const char *scheduler_name(void) {
