@@ -2,7 +2,12 @@
 
 sched_t g_scheduler = SCHED_FCFS;
 
-int pick_winner(Car **queued, int n, int target, Graph *g) { return 0; }
+int pick_winner(Car **queued, int n, int target, Graph *g) {
+    (void)target;
+    (void)g;
+
+    return fcfs_pick(queued, n);
+}
 
 int fcfs_pick(Car **q, int n) { return 0; }
 
