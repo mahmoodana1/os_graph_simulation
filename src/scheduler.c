@@ -14,6 +14,8 @@ int pick_winner(Car **queued, int n, int target, Graph *g) {
     return fcfs_pick(queued, n);
 }
 
+/* FCFS chooses the car that entered the queue first.
+   If two cars have the same queue tick, the lower car id wins. */
 int fcfs_pick(Car **q, int n) {
     if (!q || n <= 0)
         return -1;
@@ -30,6 +32,8 @@ int fcfs_pick(Car **q, int n) {
     return best;
 }
 
+/* SJF chooses the car with the lowest remaining weighted path cost.
+   If two cars have equal remaining cost, the lower car id wins. */
 int sjf_pick(Car **q, int n, Graph *g) {
     if (!q || !g || n <= 0)
         return -1;
