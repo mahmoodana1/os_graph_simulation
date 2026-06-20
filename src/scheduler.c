@@ -14,7 +14,12 @@ int pick_winner(Car **queued, int n, int target, Graph *g) {
     return fcfs_pick(queued, n);
 }
 
-int fcfs_pick(Car **q, int n) { return 0; }
+int fcfs_pick(Car **q, int n) {
+    if (n <= 0)
+        return -1;
+
+    return 0;
+}
 
 int sjf_pick(Car **q, int n, Graph *g) {
     if (n <= 0)
