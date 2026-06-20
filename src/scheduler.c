@@ -5,7 +5,7 @@ sched_t g_scheduler = SCHED_FCFS;
 int pick_winner(Car **queued, int n, int target, Graph *g) {
     (void)target;
 
-    if (n <= 0)
+    if (!queued || n <= 0)
         return -1;
 
     if (g_scheduler == SCHED_SJF)
@@ -15,7 +15,7 @@ int pick_winner(Car **queued, int n, int target, Graph *g) {
 }
 
 int fcfs_pick(Car **q, int n) {
-    if (n <= 0)
+    if (!q || n <= 0)
         return -1;
 
     int best = 0;
@@ -31,7 +31,7 @@ int fcfs_pick(Car **q, int n) {
 }
 
 int sjf_pick(Car **q, int n, Graph *g) {
-    if (n <= 0)
+    if (!q || !g || n <= 0)
         return -1;
 
     int best = 0;
