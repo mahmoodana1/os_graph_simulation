@@ -6,6 +6,9 @@ int pick_winner(Car **queued, int n, int target, Graph *g) {
     (void)target;
     (void)g;
 
+    if (n <= 0)
+        return -1;
+
     return fcfs_pick(queued, n);
 }
 
