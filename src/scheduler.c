@@ -4,10 +4,12 @@ sched_t g_scheduler = SCHED_FCFS;
 
 int pick_winner(Car **queued, int n, int target, Graph *g) {
     (void)target;
-    (void)g;
 
     if (n <= 0)
         return -1;
+
+    if (g_scheduler == SCHED_SJF)
+        return sjf_pick(queued, n, g);
 
     return fcfs_pick(queued, n);
 }
