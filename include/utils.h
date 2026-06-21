@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #define MAX_PATH 100
+#define MAX_TRAVELERS 8
 
 #include <raylib.h>
 #include <stdbool.h>

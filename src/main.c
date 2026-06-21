@@ -32,6 +32,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
 
     pid_t pids[travelers.count];
+    int spawned = 0;
 
     createShm(travelers.count);
     initSemaphores(travelers_shm_ptr, travelers.count);
@@ -47,7 +48,20 @@ int main(int argc, char *argv[]) {
             exit(0);
         }
 
+        if (pid < 0) {
+            perror("fork failed");
+            for (int k = 0; k < spawned; k++)
+                kill(pids[k], SIGTERM);
+            for (int k = 0; k < spawned; k++)
+                waitpid(pids[k], NULL, 0);
+            freeAll(g);
+            free(travelers.travelers);
+            detachShm();
+            return EXIT_FAILURE;
+        }
+
         pids[i] = pid;
+        spawned++;
     }
 
     RenderCtx *ctx = initGuiSetup(g, travelers.count);

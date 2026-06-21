@@ -75,12 +75,15 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
         addEdge(graph, src, dst, weight);
     }
 
-  // Read traveler count
+  // Read traveler count (capped at MAX_TRAVELERS — downstream queues and
+  // contender arrays are sized to that constant)
   int count;
   if (!fgets(buf, sizeof(buf), file) ||
       sscanf(buf, "%d%n", &count, &offset) != 1 ||
-      (buf[offset] != '\n' && buf[offset] != '\0') || count < 1) {
-    printf("Error: missing or invalid traveler count\n");
+      (buf[offset] != '\n' && buf[offset] != '\0') || count < 1 ||
+      count > MAX_TRAVELERS) {
+    printf("Error: missing or invalid traveler count (1..%d)\n",
+           MAX_TRAVELERS);
     fclose(file);
     freeAll(graph);
     return NULL;
@@ -123,25 +126,6 @@ Graph *loadGraph(const char *filename, TravelerList *travelers) {
 
   fclose(file);
   return graph;
-}
-
-int path_remaining_cost(Car *car, Graph *g) {
-    int sum = 0;
-
-    for (int i = car->path_idx; i < car->path_len - 1; i++) {
-
-        int fromNode = car->path[i];
-        int toNode = car->path[i + 1];
-
-        for (Node *node = g->adj[fromNode]; node != NULL; node = node->next) {
-            if (node->id == toNode) {
-                sum += node->weight;
-                break;
-            }
-        }
-    }
-
-    return sum;
 }
 
 void freeAll(Graph *graph) {

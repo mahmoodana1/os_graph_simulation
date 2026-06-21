@@ -318,7 +318,7 @@ static void DrawNodeTile(RenderCtx *ctx, int idx) {
     }
 
     if (queued_count > 0) {
-        char badge_str[8];
+        char badge_str[16];
         snprintf(badge_str, sizeof(badge_str), "%d", queued_count);
         int btw = MeasureText(badge_str, 10);
         int bbw = btw + 10;

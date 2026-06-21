@@ -21,6 +21,5 @@ typedef struct {
 Graph *createGraph(int numNodes);
 void addEdge(Graph *graph, int src, int dst, int weight);
 Graph *loadGraph(const char *file, TravelerList *travelers);
-int path_remaining_cost(Car *car, Graph *g);
 void freeAll(Graph *g);
 #endif
