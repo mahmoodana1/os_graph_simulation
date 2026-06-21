@@ -54,7 +54,8 @@ void createShm(const int travelers_count) {
     shm_id = shmget(key, SHM_SIZE, IPC_CREAT | IPC_EXCL | 0600);
     if (shm_id == -1) {
         int stale = shmget(key, 0, 0600);
-        if (stale != -1) shmctl(stale, IPC_RMID, NULL);
+        if (stale != -1)
+            shmctl(stale, IPC_RMID, NULL);
         shm_id = shmget(key, SHM_SIZE, IPC_CREAT | IPC_EXCL | 0600);
     }
     if (shm_id == -1) {
@@ -171,32 +172,32 @@ void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
 
 void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
                                       int count) {
-  for (int i = 0; i < count; i++) {
-    Car *car = &ctx->cars[i];
+    for (int i = 0; i < count; i++) {
+        Car *car = &ctx->cars[i];
 
-    if (!ctx->running)
-      continue;
+        if (!ctx->running)
+            continue;
 
-    // Consume a hop when the car is parked. CAR_NODE_WAIT is included because
-    // UpdateCar no longer counts down a float timer and so never flips the
-    // state back to CAR_IDLE on its own.
-    if (car->state == CAR_IDLE || car->state == CAR_NODE_WAIT) {
-      if (sem_trywait(&shared_mem[i].sem_ready_to_read) == 0) {
-        int pid = shared_mem[i].pid;
-        int curr = shared_mem[i].current_node;
-        int next = shared_mem[i].next_node;
+        // Consume a hop when the car is parked. CAR_NODE_WAIT is included because
+        // UpdateCar no longer counts down a float timer and so never flips the
+        // state back to CAR_IDLE on its own.
+        if (car->state == CAR_IDLE || car->state == CAR_NODE_WAIT) {
+            if (sem_trywait(&shared_mem[i].sem_ready_to_read) == 0) {
+                int pid = shared_mem[i].pid;
+                int curr = shared_mem[i].current_node;
+                int next = shared_mem[i].next_node;
 
-        if (next == -1) {
-          printf("[PID=%d] arrived at node %d | DESTINATION\n", pid, curr);
-          printf("[PID=%d] finished\n", pid);
-        } else {
-          printf("[PID=%d] arrived at node %d | next node: %d\n", pid, curr,
-                 next);
+                if (next == -1) {
+                    printf("[PID=%d] arrived at node %d | DESTINATION\n", pid, curr);
+                    printf("[PID=%d] finished\n", pid);
+                } else {
+                    printf("[PID=%d] arrived at node %d | next node: %d\n", pid, curr,
+                           next);
+                }
+                fflush(stdout);
+                ApplyTravelerUpdate(ctx, i, curr, next, shared_mem[i].total_hops);
+                // sem_ready_to_write posted by UpdateCar at t>=1
+            }
         }
-        fflush(stdout);
-        ApplyTravelerUpdate(ctx, i, curr, next, shared_mem[i].total_hops);
-        // sem_ready_to_write posted by UpdateCar at t>=1
-      }
     }
-  }
 }
