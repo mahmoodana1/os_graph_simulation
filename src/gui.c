@@ -58,8 +58,10 @@
 #define TOAST_H 50.0f
 #define TOAST_GAP 8.0f
 
-#define SPINNER_DEG_PER_SEC 300.0f /* rotation speed of the waiting indicator */
-#define SPINNER_ARC_DEG 80.0f      /* arc length of the bright segment */
+#define SPINNER_DEG_PER_SEC                                                    \
+    300.0f                    /* rotation speed of the waiting indicator       \
+                               */
+#define SPINNER_ARC_DEG 80.0f /* arc length of the bright segment */
 
 static float s_time = 0.0f;
 
@@ -144,7 +146,9 @@ static void DrawToasts(RenderCtx *ctx) {
 /* ── initGuiSetup ──────────────────────────────────────────────────────── */
 RenderCtx *initGuiSetup(Graph *g, int num_travelers) {
     static const Color traveler_colors[] = {
-        {0, 180, 255, 255}, {255, 80, 130, 255}, {255, 160, 30, 255}, {140, 80, 255, 255}, {0, 220, 160, 255}, {255, 220, 50, 255}, {60, 220, 80, 255}, {255, 120, 60, 255}, {120, 200, 255, 255}};
+        {0, 180, 255, 255},  {255, 80, 130, 255}, {255, 160, 30, 255},
+        {140, 80, 255, 255}, {0, 220, 160, 255},  {255, 220, 50, 255},
+        {60, 220, 80, 255},  {255, 120, 60, 255}, {120, 200, 255, 255}};
 
     Vector2 positions[MAX_NODES];
     float cx = GRAPH_W * 0.5f, cy = WIN_H * 0.5f, rad = 220.0f;
@@ -199,8 +203,8 @@ void DrawWeightBadge(Vector2 mid, int w, bool on_path) {
         (Rectangle){badge.x - 1.5f, badge.y - 1.5f, bw + 3.0f, bh + 3.0f}, 0.6f,
         8, (Color){255, 255, 255, 200});
     DrawRectangleRounded(badge, 0.6f, 8, badgeColor);
-    DrawText(buf, (int)(mid.x - tw / 2.0f), (int)(mid.y - fontSize / 2.0f), fontSize,
-             WHITE);
+    DrawText(buf, (int)(mid.x - tw / 2.0f), (int)(mid.y - fontSize / 2.0f),
+             fontSize, WHITE);
 }
 
 /* ── Bezier helpers ──────────────────────────────────────────────────── */
@@ -261,8 +265,7 @@ void DrawBackground(void) {
     for (int i = 0; i < 140; i++) {
         int x = (i * 6271 + 1543) % GRAPH_W;
         int y = (i * 3947 + 897) % WIN_H;
-        float r = (i % 9 == 0) ? 2.0f : (i % 4 == 0) ? 1.3f
-                                                     : 0.7f;
+        float r = (i % 9 == 0) ? 2.0f : (i % 4 == 0) ? 1.3f : 0.7f;
         unsigned char a = (unsigned char)(90 + (i * 53) % 130);
         DrawCircleV((Vector2){(float)x, (float)y}, r,
                     (Color){210, 225, 255, a});
@@ -307,6 +310,31 @@ static void DrawNodeTile(RenderCtx *ctx, int idx) {
     int tw = MeasureText(id, 11);
     DrawText(id, (int)(p.x - tw * 0.5f), (int)(p.y + (size * 0.5f) + 5), 11,
              C_NODE_ID);
+
+    int queued_count = 0;
+    for (int k = 0; k < ctx->numCars; k++) {
+        if (ctx->cars[k].state == CAR_QUEUED_OUTSIDE &&
+            ctx->cars[k].queued_node == idx) {
+            queued_count++;
+        }
+    }
+
+    if (queued_count > 0) {
+        char badge_str[8];
+        snprintf(badge_str, sizeof(badge_str), "%d", queued_count);
+        int btw = MeasureText(badge_str, 10);
+        int bbw = btw + 10;
+        int bbh = 15;
+
+        Rectangle br = {p.x + size * 0.25f, p.y - size * 0.6f, (float)bbw,
+                        (float)bbh};
+
+        DrawRectangleRounded(
+            (Rectangle){br.x - 1, br.y - 1, br.width + 2, br.height + 2}, 0.5f,
+            5, C_BADGE_BD);
+        DrawRectangleRounded(br, 0.5f, 5, C_BADGE_BG);
+        DrawText(badge_str, (int)(br.x + 5), (int)(br.y + 2), 10, C_BADGE_TXT);
+    }
 }
 
 void DrawNodes(RenderCtx *ctx) {
@@ -383,8 +411,7 @@ static int next_queue_tick(void) {
     return tick++;
 }
 
-static int collect_cars_queued_for(RenderCtx *ctx, int target_node,
-                                   Car **out) {
+static int collect_cars_queued_for(RenderCtx *ctx, int target_node, Car **out) {
     int count = 0;
     for (int i = 0; i < ctx->numCars && count < MAX_TRAVELERS; i++) {
         Car *o = &ctx->cars[i];
@@ -423,8 +450,8 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
         car->queued_node = -1;
         car->queued_since = -1;
         car->state = CAR_MOVING;
-        printf("[LOCK] car %d ACQUIRED node %d (sched=%s)\n",
-               car->id, to, scheduler_name());
+        printf("[LOCK] car %d ACQUIRED node %d (sched=%s)\n", car->id, to,
+               scheduler_name());
         fflush(stdout);
         return;
     }
@@ -440,7 +467,8 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
             printf("[LOCK] car %d ACQUIRED node %d at approach\n", car->id, to);
             fflush(stdout);
         } else {
-            /* count cars already queued on the same edge toward the same target */
+            /* count cars already queued on the same edge toward the same target
+             */
             int slot = 0;
             for (int k = 0; k < ctx->numCars; k++) {
                 Car *o = &ctx->cars[k];
@@ -477,7 +505,8 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
         car->t = 1.0f;
         car->state = CAR_NODE_WAIT;
         car->target_locked = false; /* reset for the next edge */
-        // The child owns the dwell time via sleep(1); signal arrival immediately.
+        // The child owns the dwell time via sleep(1); signal arrival
+        // immediately.
         sem_post(&travelers_shm_ptr[car->id].sem_ready_to_write);
     } else {
         Vector2 c1, c2;
@@ -519,8 +548,8 @@ static void DrawWaitSpinner(float cx, float cy) {
     DrawRing((Vector2){cx, cy}, inner, outer, 0.0f, 360.0f, 36,
              (Color){255, 255, 255, 28});
     /* bright white arc */
-    DrawRing((Vector2){cx, cy}, inner, outer, start,
-             start + SPINNER_ARC_DEG, 12, (Color){255, 255, 255, 220});
+    DrawRing((Vector2){cx, cy}, inner, outer, start, start + SPINNER_ARC_DEG,
+             12, (Color){255, 255, 255, 220});
 }
 
 void DrawSingleCar(Car *car, RenderCtx *ctx) {
@@ -671,6 +700,15 @@ void DrawPanel(RenderCtx *ctx) {
     DrawText("OS Course  —  Graph Visualizer", PANEL_X + 16, y, 10,
              (Color){85, 125, 180, 190});
     y += 16;
+
+    const char *sched_name =
+        scheduler_name(); // Fetched from your teammate's skeleton
+    char banner_str[64];
+    snprintf(banner_str, sizeof(banner_str), "Scheduler: %s",
+             sched_name ? sched_name : "UNKNOWN");
+    DrawText(banner_str, PANEL_X + 16, y, 14, C_PANEL_TITLE);
+    y += 20;
+
     DrawRectangle(PANEL_X + 12, y, PANEL_W - 24, 1, C_PANEL_SEP);
     y += 10;
 
