@@ -440,13 +440,18 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
     /* Frozen outside a locked target: only the scheduler-chosen winner among
        queued cars at this node attempts the lock this frame. */
     if (car->state == CAR_QUEUED_OUTSIDE) {
-        if (!is_scheduler_winner(car, to, ctx, g))
+        if (!is_scheduler_winner(car, to, ctx, g)) {
+            car->lock_contested = true;
             return;
-        if (sem_trywait(&node_locks[to]) != 0)
+        }
+        if (sem_trywait(&node_locks[to]) != 0) {
+            car->lock_contested = true;
             return;
+        }
         car->target_locked = true;
         car->queued_node = -1;
         car->queued_since = -1;
+        car->lock_contested = false;
         car->state = CAR_MOVING;
         printf("[LOCK] car %d ACQUIRED node %d (sched=%s)\n", car->id, to,
                scheduler_name());
@@ -479,6 +484,8 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
         car->state = CAR_QUEUED_OUTSIDE;
         car->queued_node = to;
         car->queued_since = next_queue_tick();
+        car->lock_contested = false; /* gated to true only after a real */
+                                     /* contention is observed next frame */
         Vector2 c1, c2;
         EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
         Vector2 pos =
@@ -596,7 +603,7 @@ void DrawSingleCar(Car *car, RenderCtx *ctx) {
     }
     DrawCarShape(cx, cy, ca, sa, CAR_SZ, car->color);
     DrawCircleV((Vector2){cx, cy}, 2.2f, (Color){255, 255, 255, 190});
-    if (car->state == CAR_QUEUED_OUTSIDE)
+    if (car->state == CAR_QUEUED_OUTSIDE && car->lock_contested)
         DrawWaitSpinner(cx, cy);
 }
 
@@ -891,6 +898,7 @@ void ApplyTravelerUpdate(RenderCtx *ctx, int traveler_idx, int current_node,
     c->t = 0.0f;
     c->state = CAR_MOVING;
     c->target_locked = false;
+    c->lock_contested = false;
     c->x = ctx->positions[current_node].x;
     c->y = ctx->positions[current_node].y;
 

@@ -37,6 +37,10 @@ typedef struct {
                          */
     int remaining_cost; /* weighted distance still to traverse from
                            current_node to dst; used by SJF */
+    bool lock_contested; /* true once we've confirmed the target lock is held
+                            by someone else or we lost a scheduler tie — gates
+                            the wait spinner so a free-node pass doesn't
+                            flicker the spinner for one frame */
 } Car;
 
 #endif // !DEBUG
