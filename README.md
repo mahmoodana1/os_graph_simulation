@@ -12,7 +12,7 @@ A C-based traffic simulation on a directed weighted graph, built for Linux using
 To compile and run this project, you must be on a Linux environment and have the following installed:
 * A C Compiler (e.g., `gcc`)
 * `make`
-* `raylib` • 5.5
+* `raylib • 5.5`
 
 ## Input File Format
 
