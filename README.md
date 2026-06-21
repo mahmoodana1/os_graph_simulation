@@ -169,3 +169,23 @@ Arrival: the child posts a final message with next_node = -1, sleeps one second,
 
 The producer-consumer mailbox pattern from Milestone 5 is unchanged. The only structural change is that queued_at_node handling and lock acquisition now live in the GUI update path rather than the IPC polling loop, which previously caused them to interfere with message consumption. The mailbox semaphores synchronize parent and child on hop progress; the node semaphores synchronize all travelers on intersection ownership — both living in the single shared memory segment created at startup.
 
+## Milestone 7
+
+### What Changed from Milestone 6
+
+Milestone 6 resolved node contention by whichever car called sem_trywait first, which was decided by car iteration order and was not a real scheduling policy. Milestone 7 adds an explicit scheduler that runs whenever two or more cars are queued at the same node.
+
+### Scheduler Integration
+
+The selector is chosen at startup with the -schd fcfs or -schd sjf flag (default FCFS). When a car reaches the approach point of its next node it always enters the CAR_QUEUED_OUTSIDE state for at least one frame instead of grabbing the lock directly. Each frame the GUI collects all cars queued for the same target and calls pick_winner, which dispatches to fcfs_pick or sjf_pick. Only the chosen car attempts sem_trywait on that node, so no policy is ever bypassed by iteration order. To support SJF the child computes the weighted remaining cost of its full Dijkstra path at every hop and publishes it through shared memory; the GUI mirrors that value onto the Car struct so the scheduler can rank queued cars without re-walking the graph.
+
+### FCFS vs SJF
+
+FCFS picks the car that entered the queue first using a monotonic tick stamped at queue entry. It is fair and predictable: every car waits in arrival order regardless of how much work it has left.
+
+SJF picks the car with the smallest remaining weighted path cost. It is starvation-prone in theory but produces lower average completion time when journeys differ in length.
+
+### Effect on Waiting Times
+
+On data/input.txt three cars converge on node 5 with remaining costs 6, 12 and 7. FCFS serves them in arrival order 1, 2, 3, so the short car 3 waits behind the long car 2. SJF serves them 1, 3, 2, letting the two short journeys finish before the long one starts crossing, which lowers the average wait. The order of last-finished cars is unchanged but the cars with less work left spend much less time blocked at the contested intersection.
+
