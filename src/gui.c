@@ -457,43 +457,38 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
     int w = GetEdgeWeight(g, from, to);
     car->t += (car->speed / (float)w) * dt;
 
-    /* At approach distance, claim the target node. If already locked by another
-       car, freeze here (visually wait outside the node). */
+    /* At approach distance, always enter the queue and let the scheduler
+       branch (top of UpdateCar) decide who actually takes the lock next
+       frame. This guarantees that whenever 2+ cars are approaching the
+       same target, they sit in QUEUED_OUTSIDE together for at least one
+       frame, giving FCFS vs SJF a real contention window. */
     if (!car->target_locked && car->t >= APPROACH_T) {
-        if (sem_trywait(&node_locks[to]) == 0) {
-            car->target_locked = true;
-            printf("[LOCK] car %d ACQUIRED node %d at approach\n", car->id, to);
-            fflush(stdout);
-        } else {
-            /* count cars already queued on the same edge toward the same target
-             */
-            int slot = 0;
-            for (int k = 0; k < ctx->numCars; k++) {
-                Car *o = &ctx->cars[k];
-                if (o == car || o->state != CAR_QUEUED_OUTSIDE || !o->path)
-                    continue;
-                if (o->queued_node == to && o->path_idx < o->path_len - 1 &&
-                    o->path[o->path_idx] == from)
-                    slot++;
-            }
-            float qt = APPROACH_T - slot * QUEUE_OFFSET;
-            if (qt < 0.0f)
-                qt = 0.0f;
-            car->t = qt;
-            car->state = CAR_QUEUED_OUTSIDE;
-            car->queued_node = to;
-            car->queued_since = next_queue_tick();
-            Vector2 c1, c2;
-            EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
-            Vector2 pos =
-                BezPt(ctx->positions[from], c1, c2, ctx->positions[to], car->t);
-            car->x = pos.x;
-            car->y = pos.y;
-            printf("[LOCK] car %d node %d locked; waiting outside (slot %d)\n",
-                   car->id, to, slot);
-            fflush(stdout);
-            return;
+        int slot = 0;
+        for (int k = 0; k < ctx->numCars; k++) {
+            Car *o = &ctx->cars[k];
+            if (o == car || o->state != CAR_QUEUED_OUTSIDE || !o->path)
+                continue;
+            if (o->queued_node == to && o->path_idx < o->path_len - 1 &&
+                o->path[o->path_idx] == from)
+                slot++;
         }
+        float qt = APPROACH_T - slot * QUEUE_OFFSET;
+        if (qt < 0.0f)
+            qt = 0.0f;
+        car->t = qt;
+        car->state = CAR_QUEUED_OUTSIDE;
+        car->queued_node = to;
+        car->queued_since = next_queue_tick();
+        Vector2 c1, c2;
+        EdgeCP(ctx->positions[from], ctx->positions[to], &c1, &c2);
+        Vector2 pos =
+            BezPt(ctx->positions[from], c1, c2, ctx->positions[to], car->t);
+        car->x = pos.x;
+        car->y = pos.y;
+        printf("[QUEUE] car %d waiting outside node %d (slot %d)\n",
+               car->id, to, slot);
+        fflush(stdout);
+        return;
     }
 
     if (car->t >= 1.0f) {

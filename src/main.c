@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
             travelers_shm_ptr[i].pid = getpid();
             PathResult result = solveDijkstra(g, travelers.travelers[i].src,
                                               travelers.travelers[i].dst);
-            writeTravelerPathToSharedMemory(travelers_shm_ptr, i, result);
+            writeTravelerPathToSharedMemory(travelers_shm_ptr, i, result, g);
             exit(0);
         }
 

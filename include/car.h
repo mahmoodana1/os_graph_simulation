@@ -35,6 +35,8 @@ typedef struct {
     int queued_since;   /* monotonic tick stamped when car enters
                            CAR_QUEUED_OUTSIDE for the FCFS schedular, -1 otherwise
                          */
+    int remaining_cost; /* weighted distance still to traverse from
+                           current_node to dst; used by SJF */
 } Car;
 
 #endif // !DEBUG

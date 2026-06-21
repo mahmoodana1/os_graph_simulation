@@ -104,13 +104,32 @@ void initSemaphores(TravelerMsg *shared_mem, const int travelers_count) {
     }
 }
 
+/* Sum edge weights from result.nodes[from_idx] to the end of the path. */
+static int remaining_path_cost(const PathResult *result, int from_idx,
+                               Graph *g) {
+    int sum = 0;
+    for (int i = from_idx; i < result->length - 1; i++) {
+        int a = result->nodes[i];
+        int b = result->nodes[i + 1];
+        for (Node *n = g->adj[a]; n != NULL; n = n->next) {
+            if (n->id == b) {
+                sum += n->weight;
+                break;
+            }
+        }
+    }
+    return sum;
+}
+
 void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
-                                     int traveler_index, PathResult result) {
+                                     int traveler_index, PathResult result,
+                                     Graph *g) {
     pid_t pid = getpid();
 
     // no path: publish synthetic arrival
     if (result.length <= 0) {
         shared_mem[traveler_index].total_hops = 0;
+        shared_mem[traveler_index].remaining_cost = 0;
         sem_wait(&shared_mem[traveler_index].sem_ready_to_write);
         shared_mem[traveler_index].pid = pid;
         shared_mem[traveler_index].current_node = -1;
@@ -120,6 +139,8 @@ void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
     }
 
     shared_mem[traveler_index].total_hops = result.length - 1;
+    shared_mem[traveler_index].remaining_cost =
+        remaining_path_cost(&result, 0, g);
 
     // lock starting node (car is parked at the start)
     int curr = result.nodes[0];
@@ -146,10 +167,14 @@ void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
         fflush(stdout);
         sem_post(&node_locks[curr]);
 
-        // publish move; GUI moves the car and acquires next at APPROACH_T
+        // publish move; GUI moves the car and acquires next at APPROACH_T.
+        // remaining_cost reflects weighted distance still to traverse from
+        // curr onward (used by SJF to rank queued cars).
         shared_mem[traveler_index].pid = pid;
         shared_mem[traveler_index].current_node = curr;
         shared_mem[traveler_index].next_node = next;
+        shared_mem[traveler_index].remaining_cost =
+            remaining_path_cost(&result, j, g);
         sem_post(&shared_mem[traveler_index].sem_ready_to_read);
 
         // wait for GUI to signal visual arrival at next
@@ -163,6 +188,7 @@ void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
     shared_mem[traveler_index].pid = pid;
     shared_mem[traveler_index].current_node = curr;
     shared_mem[traveler_index].next_node = -1;
+    shared_mem[traveler_index].remaining_cost = 0;
     sem_post(&shared_mem[traveler_index].sem_ready_to_read);
 
     printf("[LOCK] PID=%d RELEASING node %d (final)\n", pid, curr);
@@ -195,6 +221,7 @@ void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
                            next);
                 }
                 fflush(stdout);
+                car->remaining_cost = shared_mem[i].remaining_cost;
                 ApplyTravelerUpdate(ctx, i, curr, next, shared_mem[i].total_hops);
                 // sem_ready_to_write posted by UpdateCar at t>=1
             }

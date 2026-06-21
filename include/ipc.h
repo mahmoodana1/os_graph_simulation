@@ -1,6 +1,7 @@
 #ifndef IPC_H
 #define IPC_H
 
+#include "graph.h"
 #include "utils.h"
 #include <semaphore.h>
 #include <sys/types.h>
@@ -12,6 +13,7 @@ typedef struct {
     int current_node;
     int next_node;
     int total_hops;
+    int remaining_cost; /* sum of edge weights from current_node to dst */
     volatile int queued_at_node; // its set to target node while queued, and set
                                  // // to -1 when not queued
     sem_t sem_ready_to_read;
@@ -29,7 +31,8 @@ void detachShm();
 void createShm(const int travelers_count);
 void initSemaphores(TravelerMsg *msg, const int taraveler_count);
 void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
-                                     int traveler_index, PathResult result);
+                                     int traveler_index, PathResult result,
+                                     Graph *g);
 void readTravelerMsgFromSharedMemory(TravelerMsg *shared_mem,
                                      int traveler_index, int *current_node,
                                      int *next_node);
