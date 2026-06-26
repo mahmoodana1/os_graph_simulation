@@ -50,6 +50,7 @@ typedef struct {
     float last_ca, last_sa; /* last heading, held across non-moving states */
     bool notified;          /* true once the arrival toast has fired */
     bool hop_mode;
+    bool needs_next_hop;
 } Car;
 
 /* --- Main Renderer Context --- */
