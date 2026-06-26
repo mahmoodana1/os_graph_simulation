@@ -18,6 +18,8 @@ int parse_args(int argc, char *argv[], const char **input_path) {
             g_scheduler = SCHED_FCFS;
         } else if (strcmp(argv[2], "sjf") == 0) {
             g_scheduler = SCHED_SJF;
+        } else if (strcmp(argv[2], "priority") == 0) {
+            g_scheduler = SCHED_PRIORITY;
         } else {
             print_usage(argv[0]);
             return 1;
