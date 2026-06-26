@@ -221,6 +221,9 @@ void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
                            next);
                 }
                 fflush(stdout);
+
+                car->process_pid = pid;
+
                 car->remaining_cost = shared_mem[i].remaining_cost;
                 ApplyTravelerUpdate(ctx, i, curr, next, shared_mem[i].total_hops);
                 // sem_ready_to_write posted by UpdateCar at t>=1

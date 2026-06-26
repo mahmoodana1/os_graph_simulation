@@ -11,9 +11,26 @@ int pick_winner(Car **queued, int n, int target, Graph *g) {
     if (g_scheduler == SCHED_SJF)
         return sjf_pick(queued, n, g);
 
+    if (g_scheduler == SCHED_PRIORITY)
+        return priority_pick(queued, n);
+
     return fcfs_pick(queued, n);
 }
 
+int priority_pick(Car **q, int n) {
+    if (!q || n <= 0)
+        return -1;
+
+    int best = 0;
+
+    for (int i = 1; i < n; i++) {
+        if (q[i]->process_pid < q[best]->process_pid) {
+            best = i;
+        }
+    }
+
+    return best;
+}
 /* FCFS chooses the car that entered the queue first.
    If two cars have the same queue tick, the lower car id wins. */
 int fcfs_pick(Car **q, int n) {
@@ -57,5 +74,7 @@ int sjf_pick(Car **q, int n, Graph *g) {
 const char *scheduler_name(void) {
     if (g_scheduler == SCHED_FCFS)
         return "FCFS";
-    return "SJF";
+    if (g_scheduler == SCHED_SJF)
+        return "SJF";
+    return "PRIORITY";
 }

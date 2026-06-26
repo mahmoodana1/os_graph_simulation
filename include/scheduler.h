@@ -6,7 +6,8 @@
 
 typedef enum {
     SCHED_FCFS,
-    SCHED_SJF
+    SCHED_SJF,
+    SCHED_PRIORITY
 } sched_t;
 
 extern sched_t g_scheduler;
@@ -14,6 +15,7 @@ extern sched_t g_scheduler;
 int pick_winner(Car **queued, int n, int target, Graph *g);
 int fcfs_pick(Car **q, int n);
 int sjf_pick(Car **q, int n, Graph *g);
+int priority_pick(Car **q, int n);
 const char *scheduler_name(void);
 
 #endif
