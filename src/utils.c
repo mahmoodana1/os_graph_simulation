@@ -3,7 +3,7 @@
 #define INF 1000000
 
 void print_usage(const char *prog) {
-    printf("Usage: %s [-schd fcfs|sjf] <input_file>\n", prog);
+    printf("Usage: %s [-schd fcfs|sjf|priority] <input_file>\n", prog);
 }
 
 int parse_args(int argc, char *argv[], const char **input_path) {
