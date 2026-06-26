@@ -43,6 +43,8 @@ int main(int argc, char *argv[]) {
                                               travelers.travelers[i].dst);
 
             writeTravelerPathToSharedMemory(shm_ptr, i, result);
+            printf("[PID=%d] child exiting\n", getpid()); // <-- add this
+            fflush(stdout);
             exit(0);
         }
 
@@ -61,8 +63,8 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < travelers.count; i++)
         waitpid(pids[i], NULL, 0);
 
-    CloseWindow();
     freeRenderer(ctx);
+    CloseWindow();
     freeAll(g);
     free(travelers.travelers);
     detachShm();
