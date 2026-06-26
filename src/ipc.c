@@ -94,6 +94,9 @@ void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
         }
         sem_post(&shared_mem[traveler_index].sem_ready_to_read);
     }
+
+    // wait for the parent to send a signal back before continuing
+    sem_wait(&shared_mem[traveler_index].sem_ready_to_read);
 }
 
 void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
@@ -120,6 +123,10 @@ void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
                 ApplyTravelerUpdate(ctx, i, curr, next,
                                     shared_mem[i].total_hops);
                 sem_post(&shared_mem[i].sem_ready_to_write);
+
+                if (next == -1) {
+                    sem_post(&shared_mem[i].sem_ready_to_write);
+                }
             }
         }
     }
