@@ -6,7 +6,8 @@
 
 typedef enum {
     SCHED_FCFS,
-    SCHED_SJF
+    SCHED_SJF,
+    SCHED_PRIORITY
 } sched_t;
 
 extern sched_t g_scheduler;
