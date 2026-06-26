@@ -84,5 +84,7 @@ int priority_pick(Car **q, int n) {
 const char *scheduler_name(void) {
     if (g_scheduler == SCHED_FCFS)
         return "FCFS";
-    return "SJF";
+    if (g_scheduler == SCHED_SJF)
+        return "SJF";
+    return "PRIORITY";
 }
