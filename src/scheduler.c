@@ -8,6 +8,9 @@ int pick_winner(Car **queued, int n, int target, Graph *g) {
     if (!queued || n <= 0)
         return -1;
 
+    if (g_scheduler == SCHED_PRIORITY)
+        return priority_pick(queued, n);
+
     if (g_scheduler == SCHED_SJF)
         return sjf_pick(queued, n, g);
 
@@ -54,8 +57,34 @@ int sjf_pick(Car **q, int n, Graph *g) {
     return best;
 }
 
+
+/* Priority chooses the waiting car with the lowest child PID.
+   If PID is not known yet, it is treated as very large.
+   If two cars have the same PID, the lower car id wins. */
+int priority_pick(Car **q, int n) {
+    if (!q || n <= 0)
+        return -1;
+
+    int best = 0;
+    int best_pid = (q[0]->pid > 0) ? q[0]->pid : 2147483647;
+
+    for (int i = 1; i < n; i++) {
+        int pid = (q[i]->pid > 0) ? q[i]->pid : 2147483647;
+
+        if (pid < best_pid ||
+            (pid == best_pid && q[i]->id < q[best]->id)) {
+            best = i;
+            best_pid = pid;
+        }
+    }
+
+    return best;
+}
+
 const char *scheduler_name(void) {
     if (g_scheduler == SCHED_FCFS)
         return "FCFS";
-    return "SJF";
+    if (g_scheduler == SCHED_SJF)
+        return "SJF";
+    return "PRIORITY";
 }

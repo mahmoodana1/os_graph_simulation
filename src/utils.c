@@ -3,7 +3,7 @@
 #define INF 1000000
 
 void print_usage(const char *prog) {
-    printf("Usage: %s [-schd fcfs|sjf] <input_file>\n", prog);
+    printf("Usage: %s [-schd fcfs|sjf|priority] <input_file>\n", prog);
 }
 
 int parse_args(int argc, char *argv[], const char **input_path) {
@@ -18,6 +18,8 @@ int parse_args(int argc, char *argv[], const char **input_path) {
             g_scheduler = SCHED_FCFS;
         } else if (strcmp(argv[2], "sjf") == 0) {
             g_scheduler = SCHED_SJF;
+        } else if (strcmp(argv[2], "priority") == 0) {
+            g_scheduler = SCHED_PRIORITY;
         } else {
             print_usage(argv[0]);
             return 1;

@@ -32,7 +32,7 @@ void printPathResult(PathResult result);
 /* Parses argv into input_path and writes g_scheduler. Returns 0 on success.
  * On failure prints usage and returns non-zero. Accepts either:
  *   prog <input_file>
- *   prog -schd fcfs|sjf <input_file>
+ *   prog -schd fcfs|sjf|priority <input_file>
  */
 int parse_args(int argc, char *argv[], const char **input_path);
 void print_usage(const char *prog);
