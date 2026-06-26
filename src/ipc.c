@@ -96,14 +96,25 @@ void writeTravelerPathToSharedMemory(TravelerMsg *shared_mem,
     }
 
     // wait for the parent to send a signal back before continuing
-    sem_wait(&shared_mem[traveler_index].sem_ready_to_read);
+    sem_wait(&shared_mem[traveler_index].sem_ready_to_write);
 }
 
 void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
                                       int count) {
     for (int i = 0; i < count; i++) {
 
-        if (ctx->cars[i].state == CAR_IDLE) {
+        Car *c = &ctx->cars[i];
+
+        if (c->needs_next_hop) {
+            c->needs_next_hop = false;
+            sem_post(&shared_mem[i].sem_ready_to_write);
+        }
+    }
+
+    for (int i = 0; i < count; i++) {
+        Car *c = &ctx->cars[i];
+
+        if (c->state == CAR_IDLE) {
             if (sem_trywait(&shared_mem[i].sem_ready_to_read) == 0) {
 
                 int pid = shared_mem[i].pid;
@@ -114,18 +125,16 @@ void readTravelerPathFromSharedMemory(RenderCtx *ctx, TravelerMsg *shared_mem,
                     printf("[PID=%d] arrived at node %d | DESTINATION\n", pid,
                            curr);
                     printf("[PID=%d] finished\n", pid);
+                    fflush(stdout);
+                    ApplyTravelerUpdate(ctx, i, curr, next,
+                                        shared_mem[i].total_hops);
+                    sem_post(&shared_mem[i].sem_ready_to_write);
                 } else {
                     printf("[PID=%d] arrived at node %d | next node: %d\n", pid,
                            curr, next);
-                }
-
-                fflush(stdout);
-                ApplyTravelerUpdate(ctx, i, curr, next,
-                                    shared_mem[i].total_hops);
-                sem_post(&shared_mem[i].sem_ready_to_write);
-
-                if (next == -1) {
-                    sem_post(&shared_mem[i].sem_ready_to_write);
+                    fflush(stdout);
+                    ApplyTravelerUpdate(ctx, i, curr, next,
+                                        shared_mem[i].total_hops);
                 }
             }
         }
