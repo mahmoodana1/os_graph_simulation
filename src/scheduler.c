@@ -8,6 +8,9 @@ int pick_winner(Car **queued, int n, int target, Graph *g) {
     if (!queued || n <= 0)
         return -1;
 
+    if (g_scheduler == SCHED_PRIORITY)
+        return priority_pick(queued, n);
+
     if (g_scheduler == SCHED_SJF)
         return sjf_pick(queued, n, g);
 
