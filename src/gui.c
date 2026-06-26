@@ -197,8 +197,8 @@ void DrawWeightBadge(Vector2 mid, int w, bool on_path) {
         (Rectangle){badge.x - 1.5f, badge.y - 1.5f, bw + 3.0f, bh + 3.0f}, 0.6f,
         8, (Color){255, 255, 255, 200});
     DrawRectangleRounded(badge, 0.6f, 8, badgeColor);
-    DrawText(buf, (int)(mid.x - tw / 2.0f), (int)(mid.y - fontSize / 2.0f), fontSize,
-             WHITE);
+    DrawText(buf, (int)(mid.x - tw / 2.0f), (int)(mid.y - fontSize / 2.0f),
+             fontSize, WHITE);
 }
 
 /* ── Bezier helpers ──────────────────────────────────────────────────── */
@@ -374,8 +374,10 @@ void UpdateCar(Car *car, RenderCtx *ctx, Graph *g, float dt) {
 
     if (car->state == CAR_NODE_WAIT) {
         car->timer -= dt;
-        if (car->timer <= 0.0f)
+        if (car->timer <= 0.0f) {
             car->state = CAR_IDLE;
+            car->needs_next_hop = true;
+        }
         return;
     }
 
@@ -615,8 +617,10 @@ void DrawPanel(RenderCtx *ctx) {
             prog = 1.0f;
         } else if (c->total_hops > 0) {
             prog = ((float)(c->hops_done - 1) + c->t) / (float)c->total_hops;
-            if (prog < 0.0f) prog = 0.0f;
-            if (prog > 1.0f) prog = 1.0f;
+            if (prog < 0.0f)
+                prog = 0.0f;
+            if (prog > 1.0f)
+                prog = 1.0f;
         }
 
         DrawRectangle((int)bx, ry + 16, (int)bw, 4, (Color){18, 30, 58, 255});
