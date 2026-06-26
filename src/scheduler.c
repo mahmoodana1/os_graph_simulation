@@ -1,17 +1,80 @@
 #include "../include/scheduler.h"
+#include "../include/graph.h"
+#include <stdio.h>
 
 sched_t g_scheduler = SCHED_FCFS;
 
-int pick_winner(Car **queued, int n, int target, Graph *g) {
-    (void)target;
+/* Logs the scheduling decision for a node: who is waiting, who was chosen,
+   and why. pick_winner runs every frame while cars contend for a node, so we
+   remember the last car we announced per node and only re-print when the
+   chosen traveler actually changes — otherwise the log would flood. */
+static void log_decision(int target, Car **q, int n, int winner) {
+    static int last_winner[MAX_NODES];
+    static int initialized = 0;
 
+    if (!initialized) {
+        for (int i = 0; i < MAX_NODES; i++)
+            last_winner[i] = -1;
+        initialized = 1;
+    }
+
+    if (target < 0 || target >= MAX_NODES || winner < 0)
+        return;
+
+    int winner_id = q[winner]->id;
+    if (last_winner[target] == winner_id)
+        return; /* same traveler already announced for this node */
+    last_winner[target] = winner_id;
+
+    printf("\n");
+    printf("    +==================== SCHEDULER DECISION ====================+\n");
+    printf("    | scheduler : %-46s|\n", scheduler_name());
+    printf("    | node      : %-46d|\n", target);
+    printf("    | waiting   : %-46d|\n", n);
+    printf("    +------------------------------------------------------------+\n");
+
+    for (int i = 0; i < n; i++) {
+        char line[64];
+        if (g_scheduler == SCHED_SJF)
+            snprintf(line, sizeof(line), "car %d  (remaining cost %d)%s",
+                     q[i]->id, q[i]->remaining_cost,
+                     i == winner ? "  <= CHOSEN" : "");
+        else
+            snprintf(line, sizeof(line), "car %d  (queued at tick %d)%s",
+                     q[i]->id, q[i]->queued_since,
+                     i == winner ? "  <= CHOSEN" : "");
+        printf("    |   %-57s|\n", line);
+    }
+
+    printf("    +------------------------------------------------------------+\n");
+    char verdict[64];
+    if (g_scheduler == SCHED_SJF)
+        snprintf(verdict, sizeof(verdict),
+                 "=> car %d let in (SJF: shortest remaining cost %d)",
+                 winner_id, q[winner]->remaining_cost);
+    else
+        snprintf(verdict, sizeof(verdict),
+                 "=> car %d let in (FCFS: earliest in queue, tick %d)",
+                 winner_id, q[winner]->queued_since);
+    printf("    | %-59s|\n", verdict);
+    printf("    +============================================================+\n");
+    printf("\n");
+    fflush(stdout);
+}
+
+int pick_winner(Car **queued, int n, int target, Graph *g) {
     if (!queued || n <= 0)
         return -1;
 
+    int winner;
     if (g_scheduler == SCHED_SJF)
-        return sjf_pick(queued, n, g);
+        winner = sjf_pick(queued, n, g);
+    else
+        winner = fcfs_pick(queued, n);
 
-    return fcfs_pick(queued, n);
+    log_decision(target, queued, n, winner);
+
+    return winner;
 }
 
 /* FCFS chooses the car that entered the queue first.
